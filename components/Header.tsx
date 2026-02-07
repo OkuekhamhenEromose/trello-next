@@ -7,12 +7,12 @@ import { ChevronDown, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { label: 'Features', hasDropdown: true, href: '/features' },
-  { label: 'Solutions', hasDropdown: true, href: '/solutions' },
-  { label: 'Plans', hasDropdown: true, href: '/plans' },
-  { label: 'Pricing', hasDropdown: false, href: '/pricing' },
-  { label: 'Resources', hasDropdown: true, href: '/resources' },
-]
+  { label: 'Features', hasDropdown: true, href: '/features' as const },
+  { label: 'Solutions', hasDropdown: true, href: '/solutions' as const },
+  { label: 'Plans', hasDropdown: true, href: '/plans' as const },
+  { label: 'Pricing', hasDropdown: false, href: '/pricing' as const },
+  { label: 'Resources', hasDropdown: true, href: '/resources' as const },
+] as const
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -46,7 +46,7 @@ export default function Header() {
             {navItems.map((item) => (
               <Link
                 key={item.label}
-                href={item.href}
+                href={item.href as any} // ADDED: Type assertion here
                 className={`group flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
                   pathname === item.href
                     ? 'text-white'
@@ -68,10 +68,10 @@ export default function Header() {
             className="text-white hover:text-white hover:bg-white/10"
             asChild
           >
-            <Link href="/login">Log in</Link>
+            <Link href="/login" as="/login">Log in</Link>
           </Button>
           <Button className="bg-primary hover:bg-trello-blue-light text-white font-medium" asChild>
-            <Link href="/signup">Get Trello for free</Link>
+            <Link href="/signup" as="/signup">Get Trello for free</Link>
           </Button>
         </div>
 
@@ -93,7 +93,7 @@ export default function Header() {
             {navItems.map((item) => (
               <Link
                 key={item.label}
-                href={item.href}
+                href={item.href as any} // ADDED: Type assertion here
                 className="flex items-center justify-between py-3 text-white/90 hover:text-white transition-colors"
                 onClick={closeMobileMenu}
               >
@@ -103,12 +103,12 @@ export default function Header() {
             ))}
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/10">
               <Button className="text-white justify-start bg-transparent hover:bg-white/10" asChild>
-                <Link href="/login" onClick={closeMobileMenu}>
+                <Link href="/login" as="/login" onClick={closeMobileMenu}>
                   Log in
                 </Link>
               </Button>
               <Button className="bg-primary hover:bg-trello-blue-light text-white" asChild>
-                <Link href="/signup" onClick={closeMobileMenu}>
+                <Link href="/signup" as="/signup" onClick={closeMobileMenu}>
                   Get Trello for free
                 </Link>
               </Button>
