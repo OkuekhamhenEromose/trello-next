@@ -1,4 +1,7 @@
-@import 'tailwindcss';
+/* Remove all @apply directives and use plain CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Define theme variables directly */
 :root {
@@ -81,17 +84,49 @@ body {
   }
 }
 
-/* Custom utility classes for Tailwind v4 */
+/* Custom utility classes - REPLACE @apply with plain CSS */
 .btn-trello-primary {
-  @apply bg-primary hover:bg-trello-blue-light text-white font-medium shadow-sm hover:shadow transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: all 200ms;
+}
+
+.btn-trello-primary:hover {
+  background-color: var(--color-trello-blue-light);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.btn-trello-primary:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-ring);
 }
 
 .btn-trello-outline {
-  @apply border border-border hover:border-primary text-foreground hover:text-primary bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
+  background-color: transparent;
+}
+
+.btn-trello-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-trello-outline:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-ring);
 }
 
 .section-label {
-  @apply text-sm font-semibold text-primary uppercase tracking-wider;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .shadow-card {
@@ -116,7 +151,16 @@ body {
 }
 
 .card-hover {
-  @apply transition-all duration-300 hover:shadow-elevated hover:-translate-y-1;
+  transition-property: all;
+  transition-duration: 300ms;
+}
+
+.card-hover:hover {
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.1),
+    0 6px 10px rgba(0, 0, 0, 0.08),
+    0 12px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-4px);
 }
 
 /* Background gradients */
