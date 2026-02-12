@@ -6,6 +6,7 @@ import type { ChangeEvent } from 'react'
 import { Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+// import { Link } from 'next/link'
 
 export default function HeroSection() {
   const [email, setEmail] = useState('')
