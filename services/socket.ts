@@ -7,7 +7,7 @@ class SocketService {
   connect(token?: string): void {
     if (this.socket?.connected) return;
 
-    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:8000';
+    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
     
     this.socket = io(socketUrl, {
       auth: token ? { token } : undefined,
