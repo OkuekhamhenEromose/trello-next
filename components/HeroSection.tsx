@@ -6,10 +6,15 @@ import type { ChangeEvent } from 'react'
 import { Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-// import { Link } from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function HeroSection() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
+
+    const handleSignUp = () => {
+    router.push('/signup')
+  }
 
   return (
     <section className="bg-hero-gradient overflow-hidden">
@@ -43,7 +48,7 @@ export default function HeroSection() {
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 className="h-12 bg-white border-border"
               />
-              <Button className="h-12 px-6 btn-trello-primary whitespace-nowrap">
+              <Button onClick={handleSignUp} className="h-12 px-6 btn-trello-primary whitespace-nowrap">
                 Sign up - it&apos;s free!
               </Button>
             </div>
