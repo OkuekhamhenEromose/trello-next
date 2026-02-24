@@ -8,16 +8,45 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AlertTriangle } from 'lucide-react'
 import TrelloLogo from '@/components/TrelloLogo'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { register, isLoading } = useAuth()
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push('/welcome')
+    setError('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (!agreed) {
+      setError('You must agree to the terms')
+      return
+    }
+
+    try {
+      await register({
+        email,
+        username: username || email.split('@')[0],
+        password,
+        password2: confirmPassword,
+        fullname: fullName
+      })
+      router.push('/welcome')
+    } catch (err: any) {
+      setError(err.message || 'Registration failed')
+    }
   }
 
   return (
@@ -42,12 +71,18 @@ export default function SignupPage() {
 
       {/* Main Card */}
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-elevated p-8 z-10">
-        {/* Logo - Using TrelloLogo component */}
+        {/* Logo */}
         <div className="flex justify-center mb-8">
           <TrelloLogo showAtlassian={false} size="md" />
         </div>
 
         <h1 className="text-lg font-semibold text-center text-foreground mb-6">Create your account</h1>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md mb-4 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Warning banner */}
         <div className="bg-[hsl(45,100%,93%)] border border-[hsl(45,80%,80%)] rounded-md p-4 mb-6 flex gap-3">
@@ -57,7 +92,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Email address
@@ -67,7 +102,21 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="mt-1 h-10 text-sm font-medium"
+              className="mt-1 h-10 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Username
+            </label>
+            <Input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Choose a username"
+              className="mt-1 h-10 text-sm"
               required
             />
           </div>
@@ -81,7 +130,36 @@ export default function SignupPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Enter your full name"
-              className="mt-1 h-10 text-sm font-medium"
+              className="mt-1 h-10 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Password
+            </label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              className="mt-1 h-10 text-sm"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Confirm password
+            </label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              className="mt-1 h-10 text-sm"
               required
             />
           </div>
@@ -93,13 +171,14 @@ export default function SignupPage() {
             <a href="#" className="text-primary hover:underline">Privacy Policy ↗</a>.
           </p>
 
-          {/* reCAPTCHA mockup */}
+          {/* reCAPTCHA */}
           <div className="border rounded-md p-3 flex items-center justify-between bg-[hsl(0,0%,98%)]">
             <div className="flex items-center gap-3">
               <Checkbox
                 checked={agreed}
                 onCheckedChange={(v) => setAgreed(v as boolean)}
                 className="w-6 h-6"
+                required
               />
               <span className="text-sm">I&apos;m not a robot</span>
             </div>
@@ -111,15 +190,16 @@ export default function SignupPage() {
 
           <Button
             type="submit"
+            disabled={isLoading}
             className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            Create your account
+            {isLoading ? 'Creating account...' : 'Create your account'}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <Link href="/login" className="text-sm text-primary hover:underline">
-            Already have an Atlassian account? Log in
+            Already have an account? Log in
           </Link>
         </div>
 
