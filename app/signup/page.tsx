@@ -35,18 +35,27 @@ export default function SignupPage() {
       return
     }
 
+    // Validate email exists
+  if (!email) {
+    setError('Email is required')
+    return
+  }
+
     try {
-      await register({
-        email,
-        username: username || email.split('@')[0],
-        password,
-        password2: confirmPassword,
-        fullname: fullName
-      })
-      router.push('/welcome')
-    } catch (err: any) {
-      setError(err.message || 'Registration failed')
-    }
+    // Generate username from email safely
+    const generatedUsername = username || (email.split('@')[0] || `user_${Date.now()}`)
+    
+    await register({
+      email,
+      username: generatedUsername,
+      password,
+      password2: confirmPassword,
+      fullname: fullName || generatedUsername // Use fullName or fallback to username
+    })
+    router.push('/welcome')
+  } catch (err: any) {
+    setError(err.message || 'Registration failed')
+  }
   }
 
   return (

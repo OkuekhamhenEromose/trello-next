@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
 const inter = Inter({ 
@@ -79,7 +80,9 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
   return (
     <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <body className={`${inter.className} antialiased`}>
+        <AuthProvider>
         {children}
+        </AuthProvider>
       </body>
     </html>
   )
