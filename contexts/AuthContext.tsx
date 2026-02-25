@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api, User, LoginCredentials, RegisterData } from '@/services/api';
+import { api, User, LoginCredentials } from '@/services/api';
 import { socketService } from '@/services/socket';
 
 interface AuthContextType {
@@ -9,7 +9,6 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
@@ -71,21 +70,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (data: RegisterData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.completeRegistration(data);
-      setUser(response.user);
-      socketService.connect(response.token);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = async () => {
     try {
       await api.logout();
@@ -115,7 +99,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading,
     error,
     login,
-    register,
     logout,
     updateUser,
     isAuthenticated: !!user,
