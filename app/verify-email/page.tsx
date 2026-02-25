@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Mail, Loader2, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, ExternalLink, ArrowLeft, CheckCircle } from 'lucide-react';
 import TrelloLogo from '@/components/TrelloLogo';
 import { api } from '@/services/api';
 
@@ -19,18 +19,77 @@ export default function VerifyEmailPage() {
   const [canResend, setCanResend] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verifying' | 'success'>('pending');
 
+  // Check for token in URL (when user clicks email link) - THIS MUST RUN FIRST!
   useEffect(() => {
-    // Get email and token from session storage
-    const storedEmail = sessionStorage.getItem('verificationEmail');
-    const storedToken = sessionStorage.getItem('verificationToken');
-    
-    if (!storedEmail) {
-      router.push('/signup');
-      return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    const urlEmail = urlParams.get('email');
+
+    console.log('🔍 VerifyEmailPage - URL params:', { urlToken, urlEmail });
+
+    if (urlToken && urlEmail) {
+      // We have URL params, use them directly without checking sessionStorage
+      setEmail(urlEmail);
+      setToken(urlToken);
+      setVerificationStatus('verifying');
+      
+      const verifyWithToken = async () => {
+        try {
+          console.log('🔍 Verifying email with token:', urlToken);
+          const response = await api.verifyEmail(urlEmail, undefined, urlToken);
+          
+          console.log('🔍 Verify response:', response);
+          
+          if (response.verified) {
+            setVerificationStatus('success');
+            
+            // Store verification data in session storage for the setup page
+            sessionStorage.setItem('emailVerified', 'true');
+            sessionStorage.setItem('verificationEmail', urlEmail);
+            sessionStorage.setItem('verificationToken', urlToken);
+            
+            console.log('✅ Session storage after verification:', {
+              emailVerified: sessionStorage.getItem('emailVerified'),
+              verificationEmail: sessionStorage.getItem('verificationEmail'),
+              verificationToken: sessionStorage.getItem('verificationToken')
+            });
+            
+            // Redirect to setup account page after 2 seconds
+            setTimeout(() => {
+              console.log('➡️ Redirecting to /setup-account');
+              router.push('/setup-account');
+            }, 2000);
+          } else {
+            setError('Verification failed. Please try again.');
+            setVerificationStatus('pending');
+          }
+        } catch (error: any) {
+          console.error('❌ Verification error:', error);
+          setError(error.response?.data?.error || 'Verification failed. Please try again.');
+          setVerificationStatus('pending');
+        }
+      };
+
+      verifyWithToken();
+    } else {
+      // No URL params, check session storage (for when user navigates directly to this page)
+      const storedEmail = sessionStorage.getItem('verificationEmail');
+      const storedToken = sessionStorage.getItem('verificationToken');
+      
+      console.log('🔍 VerifyEmailPage - Session storage:', { 
+        storedEmail, 
+        storedToken 
+      });
+      
+      if (!storedEmail) {
+        console.log('❌ No stored email found and no URL params, redirecting to signup');
+        router.push('/signup');
+        return;
+      }
+      
+      setEmail(storedEmail);
+      setToken(storedToken || '');
     }
-    
-    setEmail(storedEmail);
-    setToken(storedToken || '');
   }, [router]);
 
   useEffect(() => {
@@ -44,7 +103,6 @@ export default function VerifyEmailPage() {
   }, [countdown, canResend]);
 
   const handleOpenEmail = () => {
-    // Open Gmail in a new tab
     window.open('https://mail.google.com', '_blank');
   };
 
@@ -71,37 +129,8 @@ export default function VerifyEmailPage() {
     router.push('/signup');
   };
 
-  // Check for token in URL (when user clicks email link)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlToken = urlParams.get('token');
-    const urlEmail = urlParams.get('email');
-
-    if (urlToken && urlEmail && urlEmail === email) {
-      setVerificationStatus('verifying');
-      
-      // Verify the email
-      const verifyWithToken = async () => {
-        try {
-          const response = await api.verifyEmail(urlEmail, undefined, urlToken);
-          if (response.verified) {
-            setVerificationStatus('success');
-            // Store that email is verified
-            sessionStorage.setItem('emailVerified', 'true');
-            // Redirect to account setup after 1.5 seconds
-            setTimeout(() => {
-              router.push('/setup-account');
-            }, 1500);
-          }
-        } catch (error) {
-          setError('Verification failed. Please try again.');
-          setVerificationStatus('pending');
-        }
-      };
-
-      verifyWithToken();
-    }
-  }, [router, email]);
+  // Also fix the SVG attribute warnings by removing className from SVG elements
+  // I'll update the SVG in the return statement
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f4f5f7] to-white flex items-center justify-center">
@@ -131,12 +160,11 @@ export default function VerifyEmailPage() {
           ) : verificationStatus === 'success' ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-semibold text-[#172b4d] mb-2">Email verified!</h2>
-              <p className="text-[#44546f]">Redirecting you to set up your account...</p>
+              <h2 className="text-xl font-semibold text-[#172b4d] mb-2">Email verified successfully!</h2>
+              <p className="text-[#44546f] mb-4">Now let's set up your account.</p>
+              <p className="text-sm text-[#6b778c]">Redirecting you to complete your profile...</p>
             </div>
           ) : (
             <>

@@ -25,7 +25,18 @@ export default function SetupAccountPage() {
     const storedEmail = sessionStorage.getItem('verificationEmail');
     const storedToken = sessionStorage.getItem('verificationToken');
     
+    console.log('🔍 SetupAccountPage - Session storage:', {
+      emailVerified,
+      storedEmail,
+      storedToken,
+      allSessionData: Object.keys(sessionStorage).reduce((obj, key) => {
+        obj[key] = sessionStorage.getItem(key);
+        return obj;
+      }, {} as Record<string, string | null>)
+    });
+    
     if (!emailVerified || !storedEmail || !storedToken) {
+      console.log('❌ Missing verification data, redirecting to signup');
       router.push('/signup');
       return;
     }
@@ -34,7 +45,7 @@ export default function SetupAccountPage() {
     setToken(storedToken);
   }, [router]);
 
-  // Validate password (at least 8 characters as shown in screenshot)
+  // Validate password (at least 8 characters)
   useEffect(() => {
     setPasswordValid(password.length >= 8);
   }, [password]);
@@ -51,7 +62,9 @@ export default function SetupAccountPage() {
     setError('');
 
     try {
-      // Complete registration
+      console.log('🔍 Completing registration for:', { email, fullName, token });
+      
+      // Complete registration - THIS CREATES THE USER AND RETURNS JWT
       const response = await api.completeRegistration({
         email,
         token,
@@ -61,6 +74,8 @@ export default function SetupAccountPage() {
         password2: password
       });
 
+      console.log('✅ Registration complete, response:', response);
+
       // Clear session storage
       sessionStorage.removeItem('verificationEmail');
       sessionStorage.removeItem('verificationToken');
@@ -68,8 +83,10 @@ export default function SetupAccountPage() {
 
       // Store token and redirect to welcome page
       localStorage.setItem('trello_token', response.token);
+      console.log('➡️ Redirecting to /welcome');
       router.push('/welcome');
     } catch (err: any) {
+      console.error('❌ Registration error:', err);
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
@@ -153,12 +170,12 @@ export default function SetupAccountPage() {
                 </button>
               </div>
               
-              {/* Password requirement message - exactly as in screenshot */}
+              {/* Password requirement message */}
               <p className="text-sm text-[#6b778c] mt-2">
                 Password must have at least 8 characters
               </p>
 
-              {/* Visual password strength indicator (optional enhancement) */}
+              {/* Visual password strength indicator */}
               {password && (
                 <div className="mt-3">
                   <div className="flex gap-1 h-1.5">

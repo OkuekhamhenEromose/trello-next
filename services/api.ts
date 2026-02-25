@@ -28,6 +28,14 @@ export interface Board {
   lists?: List[];
 }
 
+export interface VerifyEmailResponse{
+  message: string;
+  email: string;
+  token?: string;        // JWT token for auto-login
+  verified: boolean;
+  user?: User;
+}
+
 export interface List {
   _id: string;
   title: string;
@@ -224,13 +232,13 @@ class ApiService {
     });
   }
 
-  async verifyEmail(email: string, verificationCode?: string, token?: string): Promise<{ message: string; email: string; token: string; verified: boolean }> {
-    return this.request({
-      method: 'POST',
-      url: '/auth/register/verify',
-      data: { email, verificationCode, token },
-    });
-  }
+  async verifyEmail(email: string, verificationCode?: string, token?: string): Promise<VerifyEmailResponse> {
+  return this.request({
+    method: 'POST',
+    url: '/auth/register/verify',
+    data: { email, verificationCode, token },
+  });
+}
 
   async completeRegistration(data: RegisterData): Promise<AuthResponse> {
     return this.request({
