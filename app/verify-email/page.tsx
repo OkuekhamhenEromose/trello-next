@@ -2,20 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Mail, Loader2, ExternalLink, ArrowLeft, CheckCircle } from "lucide-react";
-import TrelloLogo from "@/components/TrelloLogo";
+import { Loader2, CheckCircle } from "lucide-react";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState<"pending" | "verifying" | "success">("pending");
+  const [verificationStatus, setVerificationStatus] = useState<
+    "pending" | "verifying" | "success"
+  >("pending");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -24,25 +23,23 @@ export default function VerifyEmailPage() {
     if (tokenParam && emailParam) {
       setEmail(emailParam);
       setVerificationStatus("verifying");
-
-      const verifyWithToken = async () => {
+      const verify = async () => {
         try {
           setVerificationStatus("success");
           setTimeout(() => {
-            router.push("/setup-account?email=" + emailParam + "&token=" + tokenParam);
+            router.push(
+              "/setup-account?email=" + emailParam + "&token=" + tokenParam
+            );
           }, 2000);
-        } catch (err: any) {
-          setError(err.message || "Verification failed. Please try again.");
+        } catch {
+          setError("Verification failed. Please try again.");
           setVerificationStatus("pending");
         }
       };
-
-      verifyWithToken();
+      verify();
     } else {
       const storedEmail = sessionStorage.getItem("verificationEmail");
-      if (storedEmail) {
-        setEmail(storedEmail);
-      }
+      if (storedEmail) setEmail(storedEmail);
     }
   }, [searchParams, router]);
 
@@ -60,17 +57,16 @@ export default function VerifyEmailPage() {
     window.open("https://mail.google.com", "_blank");
   };
 
-  const handleResendEmail = async () => {
+  const handleResend = async () => {
     if (!canResend) return;
-
     setResendLoading(true);
     setError("");
-
     try {
+      await new Promise((r) => setTimeout(r, 800));
       setCanResend(false);
       setCountdown(60);
-    } catch (err: any) {
-      setError(err.message || "Failed to resend verification email");
+    } catch {
+      setError("Failed to resend verification email");
     } finally {
       setResendLoading(false);
     }
@@ -82,116 +78,227 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a6] to-[#0052cc] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-xl">
-        <button
-          onClick={() => router.push("/signup")}
-          className="flex items-center text-white/70 hover:text-white mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to sign up
-        </button>
-
-        <div className="bg-[#1a1a2e] rounded-2xl shadow-2xl p-8 md:p-12">
-          <div className="flex justify-center mb-8">
-            <TrelloLogo size="md" />
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background:
+          "linear-gradient(160deg, hsl(212,72%,40%) 0%, hsl(212,80%,32%) 40%, hsl(214,75%,28%) 100%)",
+      }}
+    >
+      {/* Top-left Trello logo — matches screenshot */}
+      <div className="px-5 py-4">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: "hsl(212,100%,42%)" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <rect x="3" y="3" width="8" height="18" rx="1.5" />
+              <rect x="13" y="3" width="8" height="11" rx="1.5" />
+            </svg>
           </div>
+          <span
+            className="text-white font-bold text-xl tracking-tight"
+            style={{ fontSize: "20px" }}
+          >
+            Trello
+          </span>
+        </div>
+      </div>
 
+      {/* Centered content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[460px]">
           {verificationStatus === "verifying" ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-16 h-16 text-[#579dff] animate-spin mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-white mb-3">Verifying your email...</h2>
-              <p className="text-white/70">Please wait while we verify your email address.</p>
+            <div
+              className="rounded-xl p-10 text-center"
+              style={{ backgroundColor: "hsl(215,18%,20%)" }}
+            >
+              <Loader2 className="w-14 h-14 mx-auto mb-5 animate-spin text-blue-400" />
+              <h2 className="text-xl font-bold text-white mb-2">
+                Verifying your email...
+              </h2>
+              <p className="text-sm" style={{ color: "hsl(215,15%,65%)" }}>
+                Please wait while we verify your email address.
+              </p>
             </div>
           ) : verificationStatus === "success" ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-10 h-10 text-green-400" />
+            <div
+              className="rounded-xl p-10 text-center"
+              style={{ backgroundColor: "hsl(215,18%,20%)" }}
+            >
+              <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-5">
+                <CheckCircle className="w-9 h-9 text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">Email verified successfully!</h2>
-              <p className="text-white/70 mb-2">Now let's set up your account.</p>
-              <p className="text-sm text-white/50">Redirecting you to complete your profile...</p>
+              <h2 className="text-xl font-bold text-white mb-2">
+                Email verified!
+              </h2>
+              <p className="text-sm" style={{ color: "hsl(215,15%,65%)" }}>
+                Redirecting you to complete your profile...
+              </p>
             </div>
           ) : (
-            <>
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-[#2c3e50] rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Mail className="w-10 h-10 text-[#579dff]" />
-                </div>
-                <h1 className="text-3xl font-bold text-white mb-3">Let's verify your email</h1>
-                <p className="text-white/70 mb-4">We sent a verification link to:</p>
-                <div className="bg-[#2c3e50] p-4 rounded-lg inline-block">
-                  <p className="text-white font-semibold break-all">{email}</p>
-                </div>
-              </div>
+            /* Main card — matches screenshot exactly */
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{
+                backgroundColor: "hsl(215,16%,22%)",
+                boxShadow: "0 8px 40px rgba(0,0,0,0.35)",
+              }}
+            >
+              <div className="px-12 pt-10 pb-8">
+                {/* Envelope illustration */}
+                <div className="flex justify-center mb-7">
+                  <svg
+                    width="130"
+                    height="100"
+                    viewBox="0 0 130 100"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Envelope body */}
+                    <rect
+                      x="4"
+                      y="18"
+                      width="122"
+                      height="74"
+                      rx="6"
+                      fill="hsl(215,15%,60%)"
+                    />
+                    {/* Envelope lighter face */}
+                    <rect
+                      x="4"
+                      y="18"
+                      width="122"
+                      height="74"
+                      rx="6"
+                      fill="hsl(215,12%,72%)"
+                    />
+                    {/* Envelope flap triangle — open top */}
+                    <path
+                      d="M4 24 L65 62 L126 24"
+                      stroke="hsl(215,12%,62%)"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                    {/* Left diagonal crease */}
+                    <line
+                      x1="4"
+                      y1="92"
+                      x2="48"
+                      y2="55"
+                      stroke="hsl(215,12%,62%)"
+                      strokeWidth="1.5"
+                    />
+                    {/* Right diagonal crease */}
+                    <line
+                      x1="126"
+                      y1="92"
+                      x2="82"
+                      y2="55"
+                      stroke="hsl(215,12%,62%)"
+                      strokeWidth="1.5"
+                    />
 
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/50 text-red-300 p-4 rounded-lg mb-6 text-sm">
-                  {error}
+                    {/* Blue circle badge in center */}
+                    <circle cx="65" cy="60" r="18" fill="hsl(212,85%,52%)" />
+                    {/* Trello icon inside circle */}
+                    <rect
+                      x="55"
+                      y="51"
+                      width="7"
+                      height="18"
+                      rx="1.2"
+                      fill="white"
+                    />
+                    <rect
+                      x="65"
+                      y="51"
+                      width="7"
+                      height="11"
+                      rx="1.2"
+                      fill="white"
+                    />
+                  </svg>
                 </div>
-              )}
 
-              <div className="space-y-4">
-                <Button
-                  onClick={handleOpenEmail}
-                  className="w-full h-12 bg-[#579dff] hover:bg-[#85b8ff] text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02]"
+                {/* Heading */}
+                <h1
+                  className="text-center font-bold mb-3"
+                  style={{
+                    color: "hsl(215,20%,90%)",
+                    fontSize: "20px",
+                    lineHeight: "1.3",
+                  }}
                 >
-                  <ExternalLink className="w-5 h-5 mr-2" />
+                  Let's verify your email
+                </h1>
+
+                {/* Sub-text */}
+                <p
+                  className="text-center text-sm mb-1"
+                  style={{ color: "hsl(215,12%,65%)" }}
+                >
+                  We sent a verification link to:
+                </p>
+                <p
+                  className="text-center font-bold text-sm mb-7"
+                  style={{ color: "hsl(215,20%,88%)" }}
+                >
+                  {email || "your email address"}
+                </p>
+
+                {error && (
+                  <div className="bg-red-500/15 border border-red-500/40 text-red-300 rounded-md p-3 mb-5 text-xs text-center">
+                    {error}
+                  </div>
+                )}
+
+                {/* Open email button */}
+                <button
+                  onClick={handleOpenEmail}
+                  className="w-full h-11 rounded-md font-semibold text-white text-sm mb-2.5 transition-opacity hover:opacity-90 active:opacity-80"
+                  style={{ backgroundColor: "hsl(212,85%,52%)" }}
+                >
                   Open email
-                </Button>
+                </button>
 
-                <p className="text-sm text-white/60 text-center">Didn't receive the email? Check your spam folder</p>
-
-                <Button
-                  onClick={handleResendEmail}
+                {/* Resend button */}
+                <button
+                  onClick={handleResend}
                   disabled={!canResend || resendLoading}
-                  className="w-full h-12 bg-[#2c3e50] hover:bg-[#3d4c5c] text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-11 rounded-md font-semibold text-sm mb-5 transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: "hsl(215,14%,30%)",
+                    color: "hsl(215,15%,80%)",
+                  }}
                 >
                   {resendLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Sending...
                     </>
                   ) : canResend ? (
-                    "Resend verification email"
+                    "Resend"
                   ) : (
                     `Resend in ${countdown}s`
                   )}
-                </Button>
-              </div>
-
-              <div className="mt-8 text-center">
-                <button
-                  onClick={handleDifferentEmail}
-                  className="text-sm text-[#579dff] hover:text-[#85b8ff] transition-colors"
-                >
-                  Sign up with a different email
                 </button>
+
+                {/* Different email link */}
+                <div className="text-center">
+                  <button
+                    onClick={handleDifferentEmail}
+                    className="text-sm underline underline-offset-2 transition-opacity hover:opacity-80"
+                    style={{ color: "hsl(212,85%,65%)" }}
+                  >
+                    Sign up with a different email
+                  </button>
+                </div>
               </div>
-            </>
+            </div>
           )}
-
-          <div className="mt-8 flex items-center justify-center gap-2 text-white/50">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            <span className="text-sm font-semibold">ATLASSIAN</span>
-          </div>
-
-          <p className="text-xs text-white/40 text-center mt-4">One account for Trello, Jira, Confluence and more.</p>
         </div>
-
-        <p className="text-xs text-white/40 text-center mt-6">
-          This site is protected by reCAPTCHA and the Google{" "}
-          <a href="#" className="text-[#579dff] hover:underline">
-            Privacy Policy
-          </a>{" "}
-          and{" "}
-          <a href="#" className="text-[#579dff] hover:underline">
-            Terms of Service
-          </a>{" "}
-          apply.
-        </p>
       </div>
     </div>
   );
