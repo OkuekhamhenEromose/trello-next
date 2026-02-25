@@ -134,6 +134,7 @@ export interface RegisterData {
   password: string;
   password2: string;
   fullname?: string;
+  token: string; // For email verification flow
 }
 
 export interface AuthResponse {

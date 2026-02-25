@@ -64,12 +64,19 @@ export default function SetupAccountPage() {
     try {
       console.log('🔍 Completing registration for:', { email, fullName, token });
       
+      // Generate username safely - ensure it's always a string
+      const usernameFromEmail = email.split('@')[0];
+      // Provide a fallback if usernameFromEmail is undefined or empty
+      const finalUsername = usernameFromEmail && usernameFromEmail.trim() !== '' 
+        ? usernameFromEmail 
+        : `user_${Date.now()}`;
+      
       // Complete registration - THIS CREATES THE USER AND RETURNS JWT
       const response = await api.completeRegistration({
         email,
         token,
         fullname: fullName,
-        username: email.split('@')[0], // Generate username from email
+        username: finalUsername, // Now guaranteed to be a string
         password,
         password2: password
       });
