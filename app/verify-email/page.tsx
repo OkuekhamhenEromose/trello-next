@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle } from "lucide-react";
+import { api } from "@/services/api";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -23,19 +24,34 @@ export default function VerifyEmailPage() {
     if (tokenParam && emailParam) {
       setEmail(emailParam);
       setVerificationStatus("verifying");
+      
       const verify = async () => {
         try {
-          setVerificationStatus("success");
-          setTimeout(() => {
-            router.push(
-              "/setup-account?email=" + emailParam + "&token=" + tokenParam
-            );
-          }, 2000);
-        } catch {
-          setError("Verification failed. Please try again.");
+          // Call the actual verification API
+          const response = await api.verifyEmail(emailParam, undefined, tokenParam);
+          
+          if (response.verified) {
+            setVerificationStatus("success");
+            
+            // Store verification data
+            sessionStorage.setItem("emailVerified", "true");
+            sessionStorage.setItem("verificationEmail", emailParam);
+            sessionStorage.setItem("verificationToken", tokenParam);
+            
+            // Redirect to setup account with token
+            setTimeout(() => {
+              router.push(`/setup-account?email=${emailParam}&token=${tokenParam}`);
+            }, 2000);
+          } else {
+            setError("Verification failed. Please try again.");
+            setVerificationStatus("pending");
+          }
+        } catch (err: any) {
+          setError(err.response?.data?.error || "Verification failed. Please try again.");
           setVerificationStatus("pending");
         }
       };
+      
       verify();
     } else {
       const storedEmail = sessionStorage.getItem("verificationEmail");
@@ -62,11 +78,11 @@ export default function VerifyEmailPage() {
     setResendLoading(true);
     setError("");
     try {
-      await new Promise((r) => setTimeout(r, 800));
+      await api.startRegistration(email);
       setCanResend(false);
       setCountdown(60);
-    } catch {
-      setError("Failed to resend verification email");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to resend verification email");
     } finally {
       setResendLoading(false);
     }
@@ -85,7 +101,7 @@ export default function VerifyEmailPage() {
           "linear-gradient(160deg, hsl(212,72%,40%) 0%, hsl(212,80%,32%) 40%, hsl(214,75%,28%) 100%)",
       }}
     >
-      {/* Top-left Trello logo — matches screenshot */}
+      {/* Top-left Trello logo */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-2">
           <div
@@ -138,7 +154,7 @@ export default function VerifyEmailPage() {
               </p>
             </div>
           ) : (
-            /* Main card — matches screenshot exactly */
+            /* Main verification card */
             <div
               className="rounded-xl overflow-hidden"
               style={{
@@ -156,73 +172,17 @@ export default function VerifyEmailPage() {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    {/* Envelope body */}
-                    <rect
-                      x="4"
-                      y="18"
-                      width="122"
-                      height="74"
-                      rx="6"
-                      fill="hsl(215,15%,60%)"
-                    />
-                    {/* Envelope lighter face */}
-                    <rect
-                      x="4"
-                      y="18"
-                      width="122"
-                      height="74"
-                      rx="6"
-                      fill="hsl(215,12%,72%)"
-                    />
-                    {/* Envelope flap triangle — open top */}
-                    <path
-                      d="M4 24 L65 62 L126 24"
-                      stroke="hsl(215,12%,62%)"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                    {/* Left diagonal crease */}
-                    <line
-                      x1="4"
-                      y1="92"
-                      x2="48"
-                      y2="55"
-                      stroke="hsl(215,12%,62%)"
-                      strokeWidth="1.5"
-                    />
-                    {/* Right diagonal crease */}
-                    <line
-                      x1="126"
-                      y1="92"
-                      x2="82"
-                      y2="55"
-                      stroke="hsl(215,12%,62%)"
-                      strokeWidth="1.5"
-                    />
-
-                    {/* Blue circle badge in center */}
+                    <rect x="4" y="18" width="122" height="74" rx="6" fill="hsl(215,15%,60%)" />
+                    <rect x="4" y="18" width="122" height="74" rx="6" fill="hsl(215,12%,72%)" />
+                    <path d="M4 24 L65 62 L126 24" stroke="hsl(215,12%,62%)" strokeWidth="2" fill="none" />
+                    <line x1="4" y1="92" x2="48" y2="55" stroke="hsl(215,12%,62%)" strokeWidth="1.5" />
+                    <line x1="126" y1="92" x2="82" y2="55" stroke="hsl(215,12%,62%)" strokeWidth="1.5" />
                     <circle cx="65" cy="60" r="18" fill="hsl(212,85%,52%)" />
-                    {/* Trello icon inside circle */}
-                    <rect
-                      x="55"
-                      y="51"
-                      width="7"
-                      height="18"
-                      rx="1.2"
-                      fill="white"
-                    />
-                    <rect
-                      x="65"
-                      y="51"
-                      width="7"
-                      height="11"
-                      rx="1.2"
-                      fill="white"
-                    />
+                    <rect x="55" y="51" width="7" height="18" rx="1.2" fill="white" />
+                    <rect x="65" y="51" width="7" height="11" rx="1.2" fill="white" />
                   </svg>
                 </div>
 
-                {/* Heading */}
                 <h1
                   className="text-center font-bold mb-3"
                   style={{
@@ -234,7 +194,6 @@ export default function VerifyEmailPage() {
                   Let's verify your email
                 </h1>
 
-                {/* Sub-text */}
                 <p
                   className="text-center text-sm mb-1"
                   style={{ color: "hsl(215,12%,65%)" }}
@@ -254,7 +213,6 @@ export default function VerifyEmailPage() {
                   </div>
                 )}
 
-                {/* Open email button */}
                 <button
                   onClick={handleOpenEmail}
                   className="w-full h-11 rounded-md font-semibold text-white text-sm mb-2.5 transition-opacity hover:opacity-90 active:opacity-80"
@@ -263,7 +221,6 @@ export default function VerifyEmailPage() {
                   Open email
                 </button>
 
-                {/* Resend button */}
                 <button
                   onClick={handleResend}
                   disabled={!canResend || resendLoading}
@@ -285,7 +242,6 @@ export default function VerifyEmailPage() {
                   )}
                 </button>
 
-                {/* Different email link */}
                 <div className="text-center">
                   <button
                     onClick={handleDifferentEmail}
