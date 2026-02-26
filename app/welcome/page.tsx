@@ -1,628 +1,768 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   ChevronLeft,
   ChevronRight,
   X,
-  Briefcase,
-  ListTodo,
-  Users,
-  TrendingUp,
   Inbox,
-  CheckCircle2,
-  Circle,
   Plus,
   MoreHorizontal,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
-import TrelloLogo from "@/components/TrelloLogo";
 
-const TOTAL_STEPS = 7;
+/* ─────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────── */
+const TOTAL_STEPS = 4;
 
-export default function WelcomePage() {
-  const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [selectedPurpose, setSelectedPurpose] = useState<string | null>(null);
-  const [todoText, setTodoText] = useState("");
-  const [todos, setTodos] = useState<string[]>([]);
-  const [completedTodo, setCompletedTodo] = useState(false);
-  const [draggedTodo, setDraggedTodo] = useState<string | null>(null);
-  const [boardTodos, setBoardTodos] = useState<{
-    today: string[];
-    thisWeek: string[];
-    later: string[];
-  }>({
-    today: [],
-    thisWeek: [],
-    later: [],
-  });
-
-  const next = () => {
-    if (step < TOTAL_STEPS - 1) setStep(step + 1);
-    else router.push("/board");
-  };
-
-  const prev = () => {
-    if (step > 0) setStep(step - 1);
-  };
-
-  const addTodo = () => {
-    if (todoText.trim()) {
-      setTodos([...todos, todoText.trim()]);
-      setTodoText("");
-    }
-  };
-
-  const purposes = [
-    {
-      icon: <Briefcase className="w-5 h-5" />,
-      label: "Organize ideas and work",
-    },
-    {
-      icon: <ListTodo className="w-5 h-5" />,
-      label: "Track personal tasks and to-dos",
-    },
-    { icon: <Users className="w-5 h-5" />, label: "Manage team projects" },
-    {
-      icon: <TrendingUp className="w-5 h-5" />,
-      label: "Create and automate your team's workflows",
-    },
-  ];
-
-  const ProgressBar = () => (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={prev}
-        className="text-white/70 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
-        disabled={step === 0}
+/* ─────────────────────────────────────────
+   TACO MASCOT — husky dog in purple circle
+───────────────────────────────────────── */
+function TacoMascot({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`relative rounded-full overflow-hidden flex items-center justify-center ${className}`}
+      style={{ background: "hsl(272,55%,42%)" }}
+    >
+      <svg
+        viewBox="0 0 120 120"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full"
       >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <div className="flex gap-2">
-        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              i === step
-                ? "bg-white w-10"
-                : i < step
-                  ? "bg-white/60 w-8"
-                  : "bg-white/20 w-8"
-            }`}
-          />
-        ))}
-      </div>
-      <button
-        onClick={next}
-        className="text-white/70 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
+        {/* Body */}
+        <ellipse cx="60" cy="98" rx="30" ry="22" fill="hsl(210,10%,68%)" />
+        {/* Chest white */}
+        <ellipse cx="60" cy="94" rx="14" ry="16" fill="hsl(0,0%,93%)" />
+        {/* Head */}
+        <ellipse cx="60" cy="62" rx="29" ry="27" fill="hsl(210,10%,72%)" />
+        {/* Ears outer */}
+        <polygon points="35,46 27,22 50,40" fill="hsl(210,10%,68%)" />
+        <polygon points="85,46 93,22 70,40" fill="hsl(210,10%,68%)" />
+        {/* Ears inner */}
+        <polygon points="37,44 31,27 50,40" fill="hsl(340,38%,68%)" />
+        <polygon points="83,44 89,27 70,40" fill="hsl(340,38%,68%)" />
+        {/* Forehead gray patch */}
+        <ellipse cx="60" cy="55" rx="19" ry="15" fill="hsl(210,8%,60%)" />
+        {/* Eyes white */}
+        <ellipse cx="48" cy="62" rx="7.5" ry="8" fill="white" />
+        <ellipse cx="72" cy="62" rx="7.5" ry="8" fill="white" />
+        {/* Iris */}
+        <circle cx="49" cy="63" r="5" fill="hsl(208,80%,42%)" />
+        <circle cx="73" cy="63" r="5" fill="hsl(208,80%,42%)" />
+        {/* Pupil */}
+        <circle cx="49" cy="63" r="2.8" fill="hsl(213,28%,12%)" />
+        <circle cx="73" cy="63" r="2.8" fill="hsl(213,28%,12%)" />
+        {/* Shine */}
+        <circle cx="50.5" cy="61.5" r="1.3" fill="white" />
+        <circle cx="74.5" cy="61.5" r="1.3" fill="white" />
+        {/* Muzzle */}
+        <ellipse cx="60" cy="73" rx="11" ry="7.5" fill="hsl(0,0%,92%)" />
+        {/* Nose */}
+        <ellipse cx="60" cy="71" rx="5.5" ry="3.5" fill="hsl(213,22%,20%)" />
+        {/* Mouth */}
+        <path
+          d="M54 76 Q60 81 66 76"
+          stroke="hsl(213,22%,20%)"
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {/* Cheek blush */}
+        <ellipse cx="40" cy="72" rx="5.5" ry="3" fill="hsl(340,50%,70%)" opacity="0.45" />
+        <ellipse cx="80" cy="72" rx="5.5" ry="3" fill="hsl(340,50%,70%)" opacity="0.45" />
+      </svg>
     </div>
   );
+}
 
-  const OnboardingHeader = () => (
-    <header className="px-6 py-4 flex items-center justify-between">
-      <TrelloLogo size="md" />
-      <ProgressBar />
+/* ─────────────────────────────────────────
+   BOARD PREVIEW (stages 2-3)
+───────────────────────────────────────── */
+function BoardPreview({
+  allTodos,
+  placedCards,
+}: {
+  allTodos: string[];
+  placedCards: { today: string[]; thisWeek: string[]; later: string[] };
+}) {
+  return (
+    <div
+      className="flex-1 rounded-2xl overflow-hidden shadow-2xl"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(340,65%,52%) 0%, hsl(270,58%,48%) 50%, hsl(28,88%,52%) 100%)",
+      }}
+    >
+      <div className="p-4">
+        <p className="text-white font-bold text-sm mb-4 opacity-90">My Trello Board</p>
+        <div className="flex gap-3">
+          {(["Today", "This week", "Later"] as const).map((col) => {
+            const key =
+              col === "Today" ? "today" : col === "This week" ? "thisWeek" : "later";
+            return (
+              <div
+                key={col}
+                className="flex-1 rounded-xl p-3"
+                style={{ backgroundColor: "hsl(215,18%,20%)" }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white text-xs font-semibold">{col}</span>
+                  <MoreHorizontal className="w-3.5 h-3.5 text-white/35" />
+                </div>
+                {placedCards[key as keyof typeof placedCards].map((t, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg p-2.5 text-white text-xs mb-2 shadow"
+                    style={{ backgroundColor: "hsl(215,14%,30%)" }}
+                  >
+                    {t}
+                  </div>
+                ))}
+                {key === "today" && placedCards.today.length === 0 && allTodos.length > 0 && (
+                  <div
+                    className="border-2 border-dashed rounded-lg h-14 flex items-center justify-center mb-2"
+                    style={{
+                      borderColor: "hsl(212,85%,55%)",
+                      backgroundColor: "hsla(212,85%,55%,0.07)",
+                    }}
+                  >
+                    <span className="text-white/35 text-xs">Drop here</span>
+                  </div>
+                )}
+                <button className="flex items-center gap-1.5 text-white/35 hover:text-white/65 text-xs mt-1 w-full p-1.5 rounded transition-colors">
+                  <Plus className="w-3 h-3" />
+                  <span>Add a card</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   PROGRESS HEADER
+───────────────────────────────────────── */
+function OnboardingHeader({
+  step,
+  onPrev,
+  onNext,
+  onSkip,
+}: {
+  step: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
+  return (
+    <header className="flex items-center justify-between px-6 py-4 relative z-10 flex-shrink-0">
+      {/* Trello logo */}
+      <div className="flex items-center gap-2">
+        <div
+          className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: "hsl(212,100%,42%)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <rect x="3" y="3" width="8" height="18" rx="1.5" />
+            <rect x="13" y="3" width="8" height="11" rx="1.5" />
+          </svg>
+        </div>
+        <span className="text-white font-bold text-[17px] tracking-tight">Trello</span>
+      </div>
+
+      {/* Progress + arrows — absolutely centered */}
+      <div className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+        <button
+          onClick={onPrev}
+          disabled={step === 0}
+          className="text-white/55 hover:text-white disabled:opacity-20 transition-colors p-0.5"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div
+              key={i}
+              className="h-2 rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: i === step ? "42px" : "28px",
+                backgroundColor:
+                  i === step
+                    ? "white"
+                    : i < step
+                    ? "rgba(255,255,255,0.52)"
+                    : "rgba(255,255,255,0.22)",
+              }}
+            />
+          ))}
+        </div>
+        <button
+          onClick={onNext}
+          className="text-white/55 hover:text-white transition-colors p-0.5"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Close */}
       <button
-        onClick={() => router.push("/board")}
-        className="text-white/70 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+        onClick={onSkip}
+        className="text-white/55 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
       >
-        <X className="w-6 h-6" />
+        <X className="w-5 h-5" />
       </button>
     </header>
   );
+}
 
-  const TacoMascot = ({ message, position = "left" }: { message?: string; position?: "left" | "bottom" }) => (
-    <div className={`flex ${position === "left" ? "flex-col" : "flex-row"} items-center gap-3`}>
-      {message && position === "left" && (
-        <div className="bg-[#2c3e50] text-white text-sm px-4 py-2 rounded-lg shadow-lg max-w-xs">
-          {message}
-        </div>
-      )}
-      <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-5xl shadow-xl">
-        🐺
-      </div>
-      {message && position === "bottom" && (
-        <div className="bg-[#2c3e50] text-white text-sm px-4 py-2 rounded-lg shadow-lg">
-          {message}
-        </div>
-      )}
-    </div>
-  );
+/* ─────────────────────────────────────────
+   MAIN WELCOME PAGE
+───────────────────────────────────────── */
+export default function WelcomePage() {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
 
-  const MiniBoard = () => (
-    <div className="w-full max-w-sm bg-white rounded-lg shadow-2xl overflow-hidden">
-      <div className="bg-gradient-to-r from-teal-400 to-teal-500 p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-2 h-2 bg-white rounded-full" />
-          <span className="text-white font-semibold text-sm">To-dos and Reading List</span>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          <div className="min-w-[140px] bg-[#ebecf0] rounded-lg p-2">
-            <h3 className="text-xs font-semibold text-gray-800 mb-2">Ideas</h3>
-            <div className="bg-white rounded shadow-sm p-2 mb-2">
-              <p className="text-xs text-gray-700">Provide feedback on...</p>
-            </div>
-            <div className="bg-white rounded shadow-sm p-2 mb-2">
-              <p className="text-xs text-gray-700">Plan family vacation</p>
-            </div>
-            <div className="bg-white rounded shadow-sm p-2">
-              <p className="text-xs text-gray-700">Q3 hiring</p>
-            </div>
-          </div>
-          <div className="min-w-[140px] bg-[#ebecf0] rounded-lg p-2">
-            <h3 className="text-xs font-semibold text-gray-800 mb-2">Work</h3>
-            <div className="bg-white rounded shadow-sm p-2 mb-2">
-              <p className="text-xs text-gray-700">Send presentation to...</p>
-              <div className="mt-1 w-full h-1 bg-green-500 rounded" />
-            </div>
-            <div className="bg-white rounded shadow-sm p-2">
-              <p className="text-xs text-gray-700">Prep for leadership...</p>
-            </div>
-          </div>
-          <div className="min-w-[140px] bg-[#ebecf0] rounded-lg p-2">
-            <h3 className="text-xs font-semibold text-gray-800 mb-2">Read later</h3>
-            <div className="bg-white rounded shadow-sm p-2 mb-2">
-              <div className="w-full h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded mb-1" />
-              <p className="text-xs text-gray-700">Fuji Project Poster</p>
-            </div>
-            <div className="bg-white rounded shadow-sm p-2">
-              <p className="text-xs text-gray-700">Retro notes + action...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  /* ── Step 0 typewriter state ── */
+  const HEADING_NORMAL = "Welcome to Trello! Meet your ";
+  const HEADING_BOLD = "Inbox";
+  const fullHeading = HEADING_NORMAL + HEADING_BOLD;
+  const [typedChars, setTypedChars] = useState(0);
+  const [headingDone, setHeadingDone] = useState(false);
+  const [subVisible, setSubVisible] = useState(false);
+  const [cardVisible, setCardVisible] = useState(false);
+  const [inputTyped, setInputTyped] = useState(0);
+  const INPUT_DEMO = "Start using Trello";
 
-  const BoardPreview = ({
-    showDragTarget = false,
-    showCompletedCard = false,
-  }: {
-    showDragTarget?: boolean;
-    showCompletedCard?: boolean;
-  }) => (
-    <div className="flex gap-4 flex-1 max-w-6xl">
-      <div className="w-72 shrink-0 bg-[#1f2937] rounded-xl p-4 shadow-xl">
-        <div className="flex items-center gap-2 mb-4">
-          <Inbox className="w-5 h-5 text-white/70" />
-          <span className="text-white font-semibold">Inbox</span>
-        </div>
-        {todos.length > 0 &&
-          !showCompletedCard &&
-          todos.map((t, i) => (
-            <div
-              key={i}
-              draggable
-              onDragStart={() => setDraggedTodo(t)}
-              className="bg-[#374151] text-white text-sm p-3 rounded-lg mb-2 cursor-grab hover:bg-[#4b5563] transition-colors shadow-md"
-            >
-              {t}
-            </div>
-          ))}
-        {todos.length === 0 && (
-          <div className="text-white/40 text-sm">Start using Trello</div>
-        )}
-      </div>
+  /* ── Step 1 state ── */
+  const [todoText, setTodoText] = useState("");
+  const [todos, setTodos] = useState<string[]>([]);
+  const [tacoVisible, setTacoVisible] = useState(false);
+  const [arrowVisible, setArrowVisible] = useState(false);
+  const todoInputRef = useRef<HTMLInputElement>(null);
 
-      <div
-        className="flex-1 rounded-xl overflow-hidden shadow-2xl"
-        style={{
-          background: "linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #f97316 100%)",
-        }}
-      >
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-white font-semibold">My Trello Board</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {(["Today", "This week", "Later"] as const).map((list) => {
-              const key =
-                list === "Today"
-                  ? "today"
-                  : list === "This week"
-                    ? "thisWeek"
-                    : "later";
-              return (
-                <div
-                  key={list}
-                  className="min-w-[240px] bg-[#1f2937] rounded-xl p-3"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    if (draggedTodo) {
-                      const todoToAdd = draggedTodo;
-                      setBoardTodos((prev) => ({
-                        ...prev,
-                        [key]: [...prev[key], todoToAdd],
-                      }));
-                      setTodos((prev) => prev.filter((t) => t !== draggedTodo));
-                      setDraggedTodo(null);
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-white text-sm font-semibold">
-                      {list}
-                    </span>
-                    <MoreHorizontal className="w-4 h-4 text-white/50 hover:text-white cursor-pointer" />
-                  </div>
-                  {showDragTarget &&
-                    list === "Today" &&
-                    boardTodos.today.length === 0 && (
-                      <div className="border-2 border-dashed border-blue-400 rounded-lg h-24 mb-2 bg-blue-400/10 flex items-center justify-center">
-                        <span className="text-white/40 text-xs">Drop here</span>
-                      </div>
-                    )}
-                  {showCompletedCard && list === "Today" && (
-                    <div
-                      className="bg-[#374151] rounded-lg p-3 flex items-start gap-2 text-sm cursor-pointer hover:bg-[#4b5563] transition-colors mb-2 shadow-md"
-                      onClick={() => setCompletedTodo(!completedTodo)}
-                    >
-                      {completedTodo ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-white/50 flex-shrink-0 mt-0.5" />
-                      )}
-                      <span
-                        className={`text-white ${completedTodo ? "line-through opacity-60" : ""}`}
-                      >
-                        {boardTodos.today[0] || "Start using Trello"}
-                      </span>
-                    </div>
-                  )}
-                  {boardTodos[key].map(
-                    (t, i) =>
-                      !showCompletedCard && (
-                        <div
-                          key={i}
-                          className="bg-[#374151] rounded-lg p-3 text-white text-sm mb-2 shadow-md"
-                        >
-                          {t}
-                        </div>
-                      ),
-                  )}
-                  <button className="flex items-center gap-2 text-white/50 hover:text-white text-sm mt-2 w-full hover:bg-white/10 rounded-lg p-2 transition-colors">
-                    <Plus className="w-4 h-4" />
-                    <span>Add a card</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  /* ── Step 2 state ── */
+  const [placedCards] = useState({
+    today: [] as string[],
+    thisWeek: [] as string[],
+    later: [] as string[],
+  });
 
-  const renderStep = () => {
-    switch (step) {
-      case 0:
-        return (
-          <div className="flex-1 bg-gradient-to-b from-[#1a1f2e] to-[#2d1b3d] min-h-screen">
-            <header className="bg-gradient-to-r from-[#0052cc] via-[#0065ff] to-[#579dff] px-6 py-4 shadow-lg">
-              <TrelloLogo size="md" />
-            </header>
-            <div className="grid lg:grid-cols-2 gap-12 p-8 lg:p-16 items-center">
-              <div className="space-y-8">
-                <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                  What brings you here today?
-                </h1>
-                <div className="space-y-3">
-                  {purposes.map((p) => (
-                    <button
-                      key={p.label}
-                      onClick={() => setSelectedPurpose(p.label)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
-                        selectedPurpose === p.label
-                          ? "border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/20"
-                          : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                      }`}
-                    >
-                      <span className="text-white/80">{p.icon}</span>
-                      <span className="text-white font-medium">{p.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4 pt-4">
-                  <Button
-                    onClick={next}
-                    disabled={!selectedPurpose}
-                    size="lg"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Continue
-                  </Button>
-                  <button
-                    onClick={() => router.push("/board")}
-                    className="text-white/70 hover:text-white font-medium transition-colors"
-                  >
-                    Skip
-                  </button>
-                </div>
-              </div>
-              <div className="hidden lg:flex items-center justify-center">
-                <MiniBoard />
-              </div>
-            </div>
-          </div>
-        );
+  /* ── Step 3 state ── */
+  const [checked, setChecked] = useState(false);
 
-      case 1:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-              <h2 className="text-4xl font-bold text-white mb-4 text-center">
-                Add a <span className="font-black">to-do</span> to Inbox
-              </h2>
-              <p className="text-white/90 text-center max-w-2xl mb-12 text-lg">
-                Let&apos;s get started by adding a few to-dos as{" "}
-                <strong>cards</strong> to your <strong>Inbox</strong>.
-              </p>
-              <div className="flex items-end gap-6 w-full max-w-2xl">
-                <div className="shrink-0 mb-6">
-                  <TacoMascot message="Hey, I'm Taco! Add some to-dos!" position="left" />
-                </div>
-                <div className="flex-1 bg-[#1f2937] rounded-xl p-5 shadow-2xl">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Inbox className="w-5 h-5 text-white/70" />
-                    <span className="text-white font-semibold">Inbox</span>
-                  </div>
-                  <div className="border-2 border-dashed border-blue-400 rounded-lg p-4 mb-3 bg-blue-400/5">
-                    <Input
-                      value={todoText}
-                      onChange={(e) => setTodoText(e.target.value)}
-                      placeholder="What's on your to-do list?"
-                      className="bg-transparent border-none text-white placeholder:text-white/50 p-0 h-10 focus-visible:ring-0 text-base"
-                      onKeyDown={(e) => e.key === "Enter" && addTodo()}
-                    />
-                    <div className="flex justify-end mt-3">
-                      <Button
-                        onClick={addTodo}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md"
-                      >
-                        Add card
-                      </Button>
-                    </div>
-                  </div>
-                  {todos.map((t, i) => (
-                    <div
-                      key={i}
-                      className="bg-[#374151] text-white text-sm p-3 rounded-lg mb-2 shadow-md"
-                    >
-                      {t}
-                    </div>
-                  ))}
-                  <button
-                    onClick={next}
-                    className="w-full bg-[#374151] text-white/70 hover:text-white text-sm p-3 rounded-lg mt-2 hover:bg-[#4b5563] transition-colors"
-                  >
-                    Start using Trello
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+  /* Typewriter — stage 0 */
+  useEffect(() => {
+    if (step !== 0) return;
+    setTypedChars(0);
+    setHeadingDone(false);
+    setSubVisible(false);
+    setCardVisible(false);
+    setInputTyped(0);
 
-      case 2:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4">
-              <h2 className="text-4xl font-bold text-white mb-4 text-center max-w-3xl">
-                Consolidate all your to-dos with Inbox
-              </h2>
-              <p className="text-white/90 text-center max-w-2xl mb-6 text-lg">
-                Capture everything, anywhere from email, Trello&apos;s mobile
-                app, Slack, Microsoft Teams, and Trello&apos;s Chrome extension.
-              </p>
-              <Button
-                onClick={next}
-                size="lg"
-                variant="outline"
-                className="text-white border-white/30 hover:bg-white/10 mb-12 bg-transparent rounded-lg"
-              >
-                Continue
-              </Button>
-              <div className="flex items-center justify-center gap-12 w-full max-w-4xl">
-                <div className="flex flex-col items-center gap-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl">
-                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                  </div>
-                  <div className="text-white text-3xl">→</div>
-                </div>
-                <div className="bg-[#1f2937] rounded-xl p-5 w-80 shadow-2xl">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Inbox className="w-5 h-5 text-white/70" />
-                    <span className="text-white font-semibold">Inbox</span>
-                  </div>
-                  <div className="bg-[#374151] text-white/70 text-sm p-3 rounded-lg shadow-md">
-                    Start using Trello
-                  </div>
-                </div>
-                <div className="flex flex-col items-center gap-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center text-3xl shadow-xl">
-                    📱
-                  </div>
-                  <div className="text-white text-3xl">←</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      setTypedChars(count);
+      if (count >= fullHeading.length) {
+        clearInterval(interval);
+        setTimeout(() => setHeadingDone(true), 80);
+      }
+    }, 38);
+    return () => clearInterval(interval);
+  }, [step]); // eslint-disable-line
 
-      case 3:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-              <h2 className="text-4xl font-bold text-white mb-4 text-center max-w-4xl leading-tight">
-                Now, here&apos;s your first <strong>board</strong>, where
-                you&apos;ll organize your to-dos
-              </h2>
-              <p className="text-white/90 text-center max-w-2xl mb-6 text-lg">
-                Let&apos;s start you off with three <strong>lists</strong>:
-                &quot;Today&quot;, &quot;This week&quot;, &quot;Later&quot;.
-              </p>
-              <Button
-                onClick={next}
-                size="lg"
-                variant="outline"
-                className="text-white border-white/30 hover:bg-white/10 mb-12 bg-transparent rounded-lg"
-              >
-                Continue
-              </Button>
-              <div className="w-full px-4 flex justify-center">
-                <BoardPreview />
-              </div>
-              <div className="mt-8">
-                <TacoMascot message="Boards and lists are customizable!" position="bottom" />
-              </div>
-            </div>
-          </div>
-        );
+  useEffect(() => {
+    if (!headingDone || step !== 0) return;
+    const t1 = setTimeout(() => setSubVisible(true), 180);
+    const t2 = setTimeout(() => setCardVisible(true), 500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [headingDone, step]);
 
-      case 4:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-              <h2 className="text-4xl font-bold text-white mb-12 text-center">
-                Let&apos;s start getting organized
-              </h2>
-              <div className="relative w-full px-4 flex justify-center mb-8">
-                <div className="absolute left-[20%] top-1/2 -translate-y-1/2 z-10">
-                  <TacoMascot message="Drag a card from your Inbox to a list on the board" position="left" />
-                </div>
-                <BoardPreview showDragTarget />
-                {todos.length > 0 && boardTodos.today.length === 0 && (
-                  <div className="absolute left-[35%] top-1/2 w-48 pointer-events-none">
-                    <svg className="w-full h-24" viewBox="0 0 200 100">
-                      <path
-                        d="M10 10 Q 100 80, 180 50"
-                        fill="none"
-                        stroke="#f97316"
-                        strokeWidth="4"
-                        strokeDasharray="8,4"
-                        markerEnd="url(#arrowhead)"
-                      />
-                      <defs>
-                        <marker
-                          id="arrowhead"
-                          markerWidth="10"
-                          markerHeight="10"
-                          refX="5"
-                          refY="3"
-                          orient="auto"
-                        >
-                          <polygon points="0 0, 10 3, 0 6" fill="#f97316" />
-                        </marker>
-                      </defs>
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <p className="text-white/70 text-sm mt-4">
-                Drag a card from your Inbox to a list on the board, or click Continue
-              </p>
-              <Button
-                onClick={() => {
-                  if (todos.length > 0 && boardTodos.today.length === 0) {
-                    const first = todos[0] as string;
-                    setBoardTodos((prev) => ({
-                      ...prev,
-                      today: [...prev.today, first],
-                    }));
-                    setTodos((prev) => prev.slice(1));
-                  }
-                  next();
-                }}
-                variant="outline"
-                size="lg"
-                className="text-white border-white/30 hover:bg-white/10 mt-6 bg-transparent rounded-lg"
-              >
-                Continue
-              </Button>
-            </div>
-          </div>
-        );
+  /* Animate demo text in inbox */
+  useEffect(() => {
+    if (!cardVisible || step !== 0) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setInputTyped(i);
+      if (i >= INPUT_DEMO.length) clearInterval(interval);
+    }, 62);
+    return () => clearInterval(interval);
+  }, [cardVisible, step]);
 
-      case 5:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-              <h2 className="text-4xl font-bold text-white mb-12 text-center max-w-3xl">
-                You finished your first to-do, mark it complete!
-              </h2>
-              <div className="w-full px-4 flex justify-center mb-8">
-                <BoardPreview showCompletedCard />
-              </div>
-              <div className="mt-6">
-                <TacoMascot message="Check it off!" position="bottom" />
-              </div>
-              <Button
-                onClick={next}
-                variant="outline"
-                size="lg"
-                className="text-white border-white/30 hover:bg-white/10 mt-6 bg-transparent rounded-lg"
-              >
-                Continue
-              </Button>
-            </div>
-          </div>
-        );
+  /* Taco pop-in — stage 1 */
+  useEffect(() => {
+    if (step !== 1) return;
+    setTacoVisible(false);
+    setArrowVisible(false);
+    const t1 = setTimeout(() => setTacoVisible(true), 160);
+    const t2 = setTimeout(() => setArrowVisible(true), 580);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [step]);
 
-      case 6:
-        return (
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-[#0065ff] to-[#0052cc] min-h-screen">
-            <OnboardingHeader />
-            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-              <h2 className="text-4xl font-bold text-white mb-6 text-center">
-                You&apos;re on your way to better productivity!
-              </h2>
-              <Button
-                onClick={() => router.push("/board")}
-                size="lg"
-                className="bg-white hover:bg-gray-100 text-blue-600 font-semibold px-10 rounded-lg shadow-lg mb-12"
-              >
-                One last thing!
-              </Button>
-              <div className="w-full px-4 flex justify-center mb-8">
-                <BoardPreview showCompletedCard />
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-5xl shadow-xl">
-                    🎉
-                  </div>
-                  <div className="bg-[#2c3e50] text-white text-base px-5 py-3 rounded-lg shadow-lg">
-                    Woohoo!
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+  const next = useCallback(() => {
+    if (step < TOTAL_STEPS - 1) setStep((s) => s + 1);
+    else router.push("/board");
+  }, [step, router]);
 
-      default:
-        return null;
+  const prev = useCallback(() => {
+    if (step > 0) setStep((s) => s - 1);
+  }, [step]);
+
+  const addTodo = () => {
+    const val = todoText.trim();
+    if (val) {
+      setTodos((p) => [...p, val]);
+      setTodoText("");
+      todoInputRef.current?.focus();
     }
   };
 
+  /* Shared BG */
+  const bgStyle = {
+    background:
+      "linear-gradient(175deg, hsl(212,65%,35%) 0%, hsl(214,70%,28%) 55%, hsl(215,68%,22%) 100%)",
+    minHeight: "100vh",
+  };
+
+  /* ══════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0065ff] to-[#0052cc]">
-      {renderStep()}
+    <div className="flex flex-col" style={bgStyle}>
+      <OnboardingHeader step={step} onPrev={prev} onNext={next} onSkip={() => router.push("/board")} />
+
+      {/* ─── STEP 0: Welcome / Meet Inbox ─── */}
+      {step === 0 && (() => {
+        const visible = fullHeading.slice(0, typedChars);
+        const normalPart = visible.slice(0, Math.min(typedChars, HEADING_NORMAL.length));
+        const boldPart = visible.slice(HEADING_NORMAL.length);
+        const showCursor = typedChars < fullHeading.length;
+
+        return (
+          <div className="flex flex-col items-center pt-16 pb-12 px-4" style={{ minHeight: "calc(100vh - 62px)" }}>
+            {/* Heading */}
+            <h1
+              className="text-center mb-5 leading-snug"
+              style={{
+                fontSize: "clamp(22px,3.8vw,36px)",
+                color: "rgba(255,255,255,0.88)",
+                minHeight: "2em",
+              }}
+            >
+              {normalPart}
+              <strong className="font-black text-white">{boldPart}</strong>
+              {showCursor && (
+                <span
+                  className="inline-block w-0.5 h-7 ml-0.5 animate-pulse"
+                  style={{
+                    backgroundColor: "white",
+                    verticalAlign: "middle",
+                    display: "inline-block",
+                  }}
+                />
+              )}
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              className="text-center max-w-[520px] mb-11 transition-all duration-700"
+              style={{
+                color: "rgba(255,255,255,0.78)",
+                fontSize: "16.5px",
+                lineHeight: "1.6",
+                opacity: subVisible ? 1 : 0,
+                transform: subVisible ? "translateY(0)" : "translateY(8px)",
+              }}
+            >
+              This is a space for you to{" "}
+              <strong className="text-white">add to-dos</strong> or{" "}
+              <strong className="text-white">import them</strong> from other apps.
+            </p>
+
+            {/* Inbox card */}
+            <div
+              className="w-full max-w-[430px] transition-all duration-700"
+              style={{
+                opacity: cardVisible ? 1 : 0,
+                transform: cardVisible ? "translateY(0) scale(1)" : "translateY(18px) scale(0.97)",
+              }}
+            >
+              <div
+                className="rounded-2xl shadow-2xl overflow-hidden"
+                style={{ backgroundColor: "hsl(215,18%,20%)" }}
+              >
+                {/* Header row */}
+                <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
+                  <Inbox className="w-5 h-5" style={{ color: "rgba(255,255,255,0.55)" }} />
+                  <span className="text-white font-semibold text-[15px]">Inbox</span>
+                </div>
+
+                {/* Animated input card */}
+                <div className="px-4 pb-4">
+                  <div
+                    className="rounded-xl p-4 border-2"
+                    style={{
+                      backgroundColor: "hsl(215,16%,25%)",
+                      borderColor: "hsl(212,85%,52%)",
+                      boxShadow: "0 0 0 3px hsla(212,85%,52%,0.2)",
+                    }}
+                  >
+                    <p
+                      className="text-[15px] min-h-[28px] mb-4"
+                      style={{ color: "rgba(255,255,255,0.86)" }}
+                    >
+                      {INPUT_DEMO.slice(0, inputTyped)}
+                      {inputTyped < INPUT_DEMO.length && (
+                        <span
+                          className="inline-block w-0.5 h-5 ml-px animate-pulse"
+                          style={{ backgroundColor: "white", verticalAlign: "middle" }}
+                        />
+                      )}
+                    </p>
+                    <div className="flex justify-end">
+                      <button
+                        className="px-4 py-1.5 rounded-md text-white text-sm font-semibold"
+                        style={{ backgroundColor: "hsl(212,85%,52%)" }}
+                      >
+                        Add card
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ─── STEP 1: Add a to-do to Inbox ─── */}
+      {step === 1 && (
+        <div
+          className="flex flex-col items-center px-6 pb-12"
+          style={{
+            paddingTop: "clamp(32px, 5vh, 60px)",
+            minHeight: "calc(100vh - 62px)",
+          }}
+        >
+          {/* Heading */}
+          <h2
+            className="text-center mb-4"
+            style={{
+              fontSize: "clamp(22px,3.5vw,34px)",
+              color: "rgba(255,255,255,0.85)",
+              lineHeight: 1.3,
+            }}
+          >
+            <strong className="text-white font-black">Add a to-do</strong> to Inbox
+          </h2>
+          <p
+            className="text-center max-w-xl mb-10"
+            style={{ fontSize: "16px", color: "rgba(255,255,255,0.72)", lineHeight: "1.6" }}
+          >
+            Let&apos;s get started by adding a few to-dos as{" "}
+            <strong className="text-white">cards</strong> to your{" "}
+            <strong className="text-white">Inbox</strong>.
+          </p>
+
+          {/* Taco + Inbox layout */}
+          <div className="relative flex items-start justify-center gap-8 w-full max-w-2xl">
+
+            {/* ── Taco column ── */}
+            <div className="flex flex-col items-center relative flex-shrink-0" style={{ width: "160px" }}>
+              {/* Speech bubble */}
+              <div
+                className="relative px-4 py-3 rounded-xl text-[13px] font-medium shadow-lg mb-4 transition-all duration-500"
+                style={{
+                  backgroundColor: "hsl(215,18%,24%)",
+                  color: "rgba(255,255,255,0.88)",
+                  lineHeight: 1.55,
+                  opacity: tacoVisible ? 1 : 0,
+                  transform: tacoVisible ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.9)",
+                  maxWidth: "160px",
+                }}
+              >
+                Hey, I&apos;m Taco!
+                <br />
+                Add some to-dos!
+                {/* Tail */}
+                <div
+                  className="absolute"
+                  style={{
+                    bottom: "-7px",
+                    left: "18px",
+                    width: 0,
+                    height: 0,
+                    borderLeft: "7px solid transparent",
+                    borderRight: "7px solid transparent",
+                    borderTop: "8px solid hsl(215,18%,24%)",
+                  }}
+                />
+              </div>
+
+              {/* Taco avatar */}
+              <div
+                className="transition-all duration-500"
+                style={{
+                  opacity: tacoVisible ? 1 : 0,
+                  transform: tacoVisible ? "scale(1) rotate(0deg)" : "scale(0.55) rotate(-15deg)",
+                }}
+              >
+                <TacoMascot className="w-28 h-28 shadow-2xl" />
+              </div>
+
+              {/* Curvy arrow */}
+              <div
+                className="absolute transition-all duration-400"
+                style={{
+                  right: "-55px",
+                  bottom: "10px",
+                  opacity: arrowVisible ? 1 : 0,
+                  transform: arrowVisible ? "scale(1)" : "scale(0.7)",
+                }}
+              >
+                <svg width="85" height="65" viewBox="0 0 85 65" fill="none">
+                  <path
+                    d="M6 52 C16 14, 52 6, 78 30"
+                    stroke="hsl(213,25%,18%)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <path
+                    d="M72 24 L78 30 L82 22"
+                    stroke="hsl(213,25%,18%)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* ── Inbox card ── */}
+            <div
+              className="flex-1 rounded-2xl overflow-hidden shadow-2xl"
+              style={{
+                backgroundColor: "hsl(215,18%,20%)",
+                maxWidth: "390px",
+              }}
+            >
+              {/* Card header */}
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
+                <Inbox className="w-5 h-5" style={{ color: "rgba(255,255,255,0.55)" }} />
+                <span className="text-white font-semibold text-[15px]">Inbox</span>
+              </div>
+
+              <div className="px-4 pb-4">
+                {/* Text input area */}
+                <div
+                  className="rounded-xl p-4 mb-3 border-2 transition-shadow duration-200"
+                  style={{
+                    backgroundColor: "hsl(215,16%,25%)",
+                    borderColor: "hsl(212,85%,52%)",
+                    boxShadow: "0 0 0 3px hsla(212,85%,52%,0.18)",
+                  }}
+                >
+                  <input
+                    ref={todoInputRef}
+                    value={todoText}
+                    onChange={(e) => setTodoText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addTodo()}
+                    placeholder="What's on your to-do list?"
+                    className="w-full bg-transparent text-white text-sm outline-none mb-4 min-h-[28px]"
+                    style={{ caretColor: "white" }}
+                    autoFocus
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={addTodo}
+                      className="px-4 py-1.5 rounded-md text-white text-sm font-semibold transition-opacity hover:opacity-85"
+                      style={{ backgroundColor: "hsl(212,85%,52%)" }}
+                    >
+                      Add card
+                    </button>
+                  </div>
+                </div>
+
+                {/* Added todos */}
+                {todos.map((t, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg px-3 py-2.5 text-sm mb-2 text-white/80"
+                    style={{ backgroundColor: "hsl(215,14%,28%)" }}
+                  >
+                    {t}
+                  </div>
+                ))}
+
+                {/* Default placeholder card */}
+                <div
+                  className="px-3 py-2.5 rounded-lg text-sm text-white/35"
+                >
+                  Start using Trello
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={next}
+            className="mt-8 text-white/50 hover:text-white/80 text-sm transition-colors underline underline-offset-2"
+          >
+            Skip for now
+          </button>
+        </div>
+      )}
+
+      {/* ─── STEP 2: Here's your board ─── */}
+      {step === 2 && (
+        <div
+          className="flex flex-col items-center px-6 pb-12"
+          style={{ paddingTop: "clamp(32px,5vh,56px)", minHeight: "calc(100vh - 62px)" }}
+        >
+          <h2
+            className="text-center mb-4"
+            style={{ fontSize: "clamp(22px,3.2vw,32px)", color: "rgba(255,255,255,0.9)", lineHeight: 1.3 }}
+          >
+            Here&apos;s your first{" "}
+            <strong className="text-white font-black">board</strong>
+          </h2>
+          <p
+            className="text-center max-w-xl mb-4"
+            style={{ fontSize: "15.5px", color: "rgba(255,255,255,0.68)", lineHeight: 1.6 }}
+          >
+            Organize your to-dos with <strong className="text-white">lists</strong>{" "}
+            &amp; <strong className="text-white">cards</strong>. Start by moving a card
+            from Inbox to &ldquo;Today&rdquo;.
+          </p>
+
+          <button
+            onClick={next}
+            className="mb-10 px-6 py-2 rounded-lg text-white text-sm font-semibold border transition-colors hover:bg-white/10"
+            style={{ borderColor: "rgba(255,255,255,0.25)" }}
+          >
+            Continue
+          </button>
+
+          <div className="flex items-start gap-4 w-full max-w-3xl">
+            {/* Mini inbox */}
+            <div
+              className="w-48 flex-shrink-0 rounded-xl shadow-xl"
+              style={{ backgroundColor: "hsl(215,18%,20%)" }}
+            >
+              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                <Inbox className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
+                <span className="text-white font-semibold text-sm">Inbox</span>
+              </div>
+              <div className="px-3 pb-4">
+                {(todos.length > 0 ? todos : ["Start using Trello"]).map((t, i) => (
+                  <div
+                    key={i}
+                    draggable
+                    className="rounded-lg px-3 py-2.5 text-xs text-white/78 mb-2 cursor-grab shadow transition-opacity hover:opacity-70"
+                    style={{ backgroundColor: "hsl(215,14%,28%)" }}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <BoardPreview
+              allTodos={todos.length > 0 ? todos : ["Start using Trello"]}
+              placedCards={placedCards}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ─── STEP 3: Mark complete ─── */}
+      {step === 3 && (
+        <div
+          className="flex flex-col items-center px-6 pb-12"
+          style={{ paddingTop: "clamp(40px,6vh,72px)", minHeight: "calc(100vh - 62px)" }}
+        >
+          <h2
+            className="text-center mb-4"
+            style={{ fontSize: "clamp(22px,3.2vw,32px)", color: "white", lineHeight: 1.3 }}
+          >
+            You finished your first to-do!
+            <br />
+            Mark it complete 🎉
+          </h2>
+          <p
+            className="text-center max-w-lg mb-10"
+            style={{ fontSize: "15.5px", color: "rgba(255,255,255,0.68)", lineHeight: 1.6 }}
+          >
+            Click the card below to check it off.
+          </p>
+
+          {/* Completable card */}
+          <div
+            className="w-full max-w-xs rounded-2xl overflow-hidden shadow-2xl mb-8"
+            style={{ backgroundColor: "hsl(215,18%,20%)" }}
+          >
+            <div className="px-5 pt-4 pb-2">
+              <span className="text-white font-semibold text-sm">Today</span>
+            </div>
+            <div className="px-4 pb-5">
+              <button
+                onClick={() => setChecked((c) => !c)}
+                className="w-full flex items-start gap-3 rounded-xl p-3.5 text-left transition-all duration-200 hover:brightness-110"
+                style={{ backgroundColor: "hsl(215,14%,28%)" }}
+              >
+                {checked ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <Circle className="w-5 h-5 text-white/30 flex-shrink-0 mt-0.5" />
+                )}
+                <span
+                  className="text-sm transition-all duration-300"
+                  style={{
+                    color: checked ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.85)",
+                    textDecoration: checked ? "line-through" : "none",
+                  }}
+                >
+                  {todos[0] || "Start using Trello"}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Taco celebration */}
+          <div className="flex items-center gap-4 mb-10">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl"
+              style={{ background: "hsl(272,55%,42%)" }}
+            >
+              <span className="text-3xl">{checked ? "🎉" : "👇"}</span>
+            </div>
+            {checked && (
+              <div
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-white shadow-lg"
+                style={{ backgroundColor: "hsl(215,18%,26%)" }}
+              >
+                Woohoo! You&apos;re on your way!
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => router.push("/board")}
+            className="px-10 py-3 rounded-lg text-blue-700 bg-white hover:bg-blue-50 font-bold shadow-xl transition-colors text-[15px]"
+          >
+            Go to my board →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
