@@ -1,11 +1,11 @@
-/* Remove all @apply directives and use plain CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Define theme variables directly */
+/* ─────────────────────────────────────────
+   THEME VARIABLES
+───────────────────────────────────────── */
 :root {
-  /* Trello Theme - Light Mode */
   --color-background: #f4f5f7;
   --color-foreground: #172b4d;
   --color-card: #ffffff;
@@ -22,25 +22,20 @@
   --color-border: #dfe1e6;
   --color-input: #ffffff;
   --color-ring: #0052cc;
-  
-  /* Trello Brand Colors */
+
   --color-trello-navy: #172b4d;
   --color-trello-blue: #0052cc;
   --color-trello-blue-light: #0065ff;
   --color-trello-cyan: #00c7e5;
-  --color-trello-green: #00b8d9;
   --color-trello-purple: #6554c0;
-  --color-trello-pink: #ff5630;
+  --color-trello-red: #de350b;
   --color-trello-orange: #ff8b00;
   --color-trello-yellow: #ffab00;
-  --color-trello-red: #de350b;
-  
-  /* Border radius */
+
   --radius: 0.75rem;
 }
 
 .dark {
-  /* Dark Mode Colors */
   --color-background: #1d2125;
   --color-foreground: #ffffff;
   --color-card: #22272b;
@@ -59,11 +54,12 @@
   --color-ring: #579dff;
 }
 
-/* Base styles */
+/* ─────────────────────────────────────────
+   BASE
+───────────────────────────────────────── */
 * {
   border-color: var(--color-border);
 }
-
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -72,55 +68,143 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: var(--color-background-dark, #1d2125);
-    color: var(--color-foreground-dark, #ffffff);
-  }
-
-  * {
-    border-color: var(--color-border-dark, #3d4c5c);
-  }
-}
-
-/* Custom utility classes - REPLACE @apply with plain CSS */
+/* ─────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────── */
 .btn-trello-primary {
   background-color: var(--color-primary);
   color: white;
   font-weight: 500;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   transition: all 200ms;
 }
-
 .btn-trello-primary:hover {
   background-color: var(--color-trello-blue-light);
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
-
 .btn-trello-primary:focus-visible {
   outline: 2px solid transparent;
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-ring);
 }
-
 .btn-trello-outline {
   border: 1px solid var(--color-border);
   color: var(--color-foreground);
   background-color: transparent;
 }
-
 .btn-trello-outline:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.btn-trello-outline:focus-visible {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--color-ring);
+/* ─────────────────────────────────────────
+   SHADOWS
+───────────────────────────────────────── */
+.shadow-card {
+  box-shadow:
+    0 1px 1px rgba(0,0,0,.06),
+    0 2px 2px rgba(0,0,0,.06),
+    0 4px 4px rgba(0,0,0,.06),
+    0 8px 8px rgba(0,0,0,.06);
+}
+.shadow-elevated {
+  box-shadow:
+    0 3px 5px rgba(0,0,0,.10),
+    0 6px 10px rgba(0,0,0,.08),
+    0 12px 20px rgba(0,0,0,.06);
+}
+.shadow-hero {
+  box-shadow:
+    0 20px 40px rgba(0,0,0,.10),
+    0 40px 80px rgba(0,0,0,.08);
+}
+.card-hover {
+  transition-property: all;
+  transition-duration: 300ms;
+}
+.card-hover:hover {
+  box-shadow:
+    0 3px 5px rgba(0,0,0,.10),
+    0 6px 10px rgba(0,0,0,.08),
+    0 12px 20px rgba(0,0,0,.06);
+  transform: translateY(-4px);
 }
 
+/* ─────────────────────────────────────────
+   BACKGROUND GRADIENTS
+───────────────────────────────────────── */
+.bg-hero-gradient {
+  background-image: linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
+}
+.bg-cta-gradient {
+  background-image: linear-gradient(180deg, #f4f5f7 0%, #ffffff 100%);
+}
+
+/* ─────────────────────────────────────────
+   GENERAL ANIMATION KEYFRAMES
+───────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0);     }
+  50%       { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────
+   WELCOME PAGE — SEND BUTTON MOTION STROKES
+   Used in step 3 (Forward emails) on hover.
+   Diagonal lines that shoot out from the
+   send button to indicate upward movement.
+───────────────────────────────────────── */
+@keyframes strokePop {
+  from {
+    opacity: 0;
+    transform: translateX(-6px) rotate(-42deg) scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(-42deg) scaleX(1);
+  }
+}
+
+.sp1 {
+  animation: strokePop 0.16s ease-out 0ms   forwards;
+}
+.sp2 {
+  animation: strokePop 0.16s ease-out 55ms  forwards;
+}
+.sp3 {
+  animation: strokePop 0.16s ease-out 110ms forwards;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE TYPE
+───────────────────────────────────────── */
+.text-fluid-sm   { font-size: clamp(0.8rem, 2vw, 1rem);    }
+.text-fluid-base { font-size: clamp(1rem, 2.5vw, 1.25rem); }
+.text-fluid-lg   { font-size: clamp(1.25rem, 3vw, 1.5rem); }
+.text-fluid-xl   { font-size: clamp(1.5rem, 4vw, 2rem);    }
+
+/* ─────────────────────────────────────────
+   SECTION LABEL
+───────────────────────────────────────── */
 .section-label {
   font-size: 0.875rem;
   font-weight: 600;
@@ -129,126 +213,15 @@ body {
   letter-spacing: 0.05em;
 }
 
-.shadow-card {
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.06),
-    0 2px 2px rgba(0, 0, 0, 0.06),
-    0 4px 4px rgba(0, 0, 0, 0.06),
-    0 8px 8px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-elevated {
-  box-shadow:
-    0 3px 5px rgba(0, 0, 0, 0.1),
-    0 6px 10px rgba(0, 0, 0, 0.08),
-    0 12px 20px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-hero {
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    0 40px 80px rgba(0, 0, 0, 0.08);
-}
-
-.card-hover {
-  transition-property: all;
-  transition-duration: 300ms;
-}
-
-.card-hover:hover {
-  box-shadow:
-    0 3px 5px rgba(0, 0, 0, 0.1),
-    0 6px 10px rgba(0, 0, 0, 0.08),
-    0 12px 20px rgba(0, 0, 0, 0.06);
-  transform: translateY(-4px);
-}
-
-/* Background gradients */
-.bg-hero-gradient {
-  background-image: linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
-}
-
-.bg-cta-gradient {
-  background-image: linear-gradient(180deg, #f4f5f7 0%, #ffffff 100%);
-}
-
-/* Animation utilities */
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.6s ease-out;
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Keyframes for animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-/* Responsive text utilities */
-.text-fluid-sm {
-  font-size: clamp(0.8rem, 2vw, 1rem);
-}
-
-.text-fluid-base {
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
-}
-
-.text-fluid-lg {
-  font-size: clamp(1.25rem, 3vw, 1.5rem);
-}
-
-.text-fluid-xl {
-  font-size: clamp(1.5rem, 4vw, 2rem);
-}
-
-/* Custom scrollbar */
+/* ─────────────────────────────────────────
+   CUSTOM SCROLLBAR
+───────────────────────────────────────── */
 .scrollbar-trello {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
 }
-
-.scrollbar-trello::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.scrollbar-trello::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.scrollbar-trello::-webkit-scrollbar       { width: 6px; height: 6px; }
+.scrollbar-trello::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-trello::-webkit-scrollbar-thumb {
   background-color: var(--color-border);
   border-radius: 20px;
