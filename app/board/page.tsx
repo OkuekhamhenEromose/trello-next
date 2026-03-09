@@ -1,468 +1,532 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Search, Plus, Bell, HelpCircle, MoreHorizontal, Star, Users, X,
-  Inbox, Calendar, LayoutDashboard, Grid3x3, Mail, Smartphone, Slack,
-  Chrome, Lock, ChevronRight, Clock, Pin, ArrowRight, SlidersHorizontal,
-  Zap, Filter,
+  Search, Plus, Bell, HelpCircle, MoreHorizontal, Users, X,
+  Inbox, Calendar, LayoutDashboard, Grid3x3, Mail, Smartphone,
+  Lock, ChevronDown, SlidersHorizontal, AlignJustify, ChevronUp,
+  MessageSquare, Aperture, Star,
 } from "lucide-react";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-interface Card  { id: string; title: string }
-interface List  { id: string; title: string; cards: Card[] }
-type PanelKey = "inbox" | "planner" | "board";
+/* ─────────────────────────────────────────────────────────
+   TYPES
+───────────────────────────────────────────────────────── */
+interface Card { id: string; title: string }
+interface List { id: string; title: string; cards: Card[] }
+type Panel = "inbox" | "planner" | "board";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-function TrelloLogo() {
+/* ─────────────────────────────────────────────────────────
+   DESIGN TOKENS  (match screenshot exactly)
+───────────────────────────────────────────────────────── */
+const T = {
+  /* navbar */
+  nav:        "rgba(23,28,33,0.96)",
+  navBorder:  "rgba(255,255,255,0.07)",
+  /* inbox */
+  inboxBg:    "#1a2236",
+  inboxBg2:   "#1c2846",
+  inboxCard:  "#1f3048",
+  inboxCardH: "#27394f",
+  inboxInput: "#1a2f44",
+  /* planner */
+  planBg:     "#1d2125",
+  /* board */
+  boardGrad:  "linear-gradient(175deg,#0044b0 0%,#005fc0 40%,#0088c8 80%,#00a8d8 100%)",
+  /* lists */
+  listBg:     "#101204",
+  cardBg:     "#22272b",
+  cardHov:    "#2c333a",
+  /* common */
+  border:     "rgba(61,76,92,0.6)",
+  muted:      "#9fadbc",
+  text:       "#b6c2cf",
+  blue:       "#579dff",
+  blueDark:   "#0c66e4",
+};
+
+/* ─────────────────────────────────────────────────────────
+   TRELLO LOGO
+───────────────────────────────────────────────────────── */
+function Logo() {
   return (
-    <div className="flex items-center gap-1.5 select-none">
-      <div className="w-7 h-7 bg-[#579dff] rounded-[6px] flex items-center justify-center flex-shrink-0">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <rect x="1.5" y="1.5" width="4.5" height="9.5" rx="1" fill="white"/>
-          <rect x="9"   y="1.5" width="4.5" height="6"   rx="1" fill="white"/>
+    <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0, userSelect:"none" }}>
+      <div style={{ width:32, height:32, background:"#579dff", borderRadius:8,
+        display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="2" y="2" width="5" height="11" rx="1.2" fill="white"/>
+          <rect x="11" y="2" width="5" height="7" rx="1.2" fill="white"/>
         </svg>
       </div>
-      <span className="text-white font-bold text-[20px] tracking-tight hidden sm:inline">Trello</span>
+      <span style={{ color:"white", fontWeight:700, fontSize:20, letterSpacing:"-0.3px" }}>Trello</span>
     </div>
   );
 }
 
-function Avatar({ initials = "EO", size = "md", ring = false }: { initials?: string; size?: "sm"|"md"; ring?: boolean }) {
-  const sz = size === "sm" ? "w-7 h-7 text-[11px]" : "w-8 h-8 text-[13px]";
+/* ─────────────────────────────────────────────────────────
+   AVATAR
+───────────────────────────────────────────────────────── */
+function Av({ size=32, bg="linear-gradient(135deg,#eb5a46,#c9372c)", initials="EC" }:
+  { size?:number; bg?:string; initials?:string }) {
   return (
-    <div className={`${sz} rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 ${ring ? "ring-2 ring-[#579dff] ring-offset-1 ring-offset-[#1d2125]" : ""}`}>
+    <div style={{ width:size, height:size, borderRadius:"50%", background:bg, flexShrink:0,
+      display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
+      color:"white", fontWeight:700, fontSize:size*0.38 }}>
       {initials}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Search
-// ─────────────────────────────────────────────────────────────────────────────
-function SearchBar() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
+/* ─────────────────────────────────────────────────────────
+   ICON BUTTON
+───────────────────────────────────────────────────────── */
+function IconBtn({ children, badge }: { children:React.ReactNode; badge?:number }) {
+  const [hov, setHov] = useState(false);
   return (
-    <div ref={ref} className="relative w-full max-w-[600px]">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9fadbc] pointer-events-none" />
-      <input onFocus={() => setOpen(true)} placeholder="Search"
-        className="w-full bg-[#2c333a] border border-[#454f59] hover:border-[#738496] focus:border-[#579dff] rounded-[5px] pl-9 pr-3 py-[7px] text-[#b6c2cf] placeholder:text-[#9fadbc] text-sm focus:outline-none focus:ring-1 focus:ring-[#579dff]/30 transition-all" />
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[#282e33] rounded-lg shadow-2xl border border-[#3d4c5c] z-50 py-1">
-          <div className="px-3 py-1.5 text-[10px] font-bold text-[#9fadbc] tracking-widest uppercase">Recent Boards</div>
-          {[
-            { name: "new one1",       ws: "Eromose Okuekhamhen's workspace", g: "from-blue-700 to-blue-900" },
-            { name: "Kanban Template",ws: "Private Workspace",               g: "from-orange-400 via-pink-400 to-cyan-400" },
-          ].map(b => (
-            <button key={b.name} className="w-full flex items-center gap-3 px-3 py-[9px] hover:bg-[#3d4c5c] transition-colors">
-              <div className={`w-8 h-6 rounded bg-gradient-to-br ${b.g} flex-shrink-0`} />
-              <div className="text-left">
-                <div className="text-[#b6c2cf] text-[13px]">{b.name}</div>
-                <div className="text-[#9fadbc] text-xs">{b.ws}</div>
-              </div>
-            </button>
-          ))}
-          <div className="border-t border-[#3d4c5c] mt-1 pt-1">
-            <button className="w-full flex items-center gap-3 px-3 py-[9px] hover:bg-[#3d4c5c] transition-colors">
-              <Search className="w-4 h-4 text-[#9fadbc]" />
-              <span className="text-[#b6c2cf] text-[13px]">Advanced search</span>
-              <ArrowRight className="w-3 h-3 text-[#9fadbc] ml-auto" />
-            </button>
-          </div>
-        </div>
+    <button
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ position:"relative", padding:7, background:hov?"rgba(255,255,255,0.1)":"none",
+        border:"none", cursor:"pointer", color:"rgba(255,255,255,0.65)", borderRadius:5,
+        display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.12s" }}>
+      {children}
+      {badge != null && (
+        <span style={{ position:"absolute", top:2, right:2, width:14, height:14,
+          background:"#ef5c48", borderRadius:"50%", fontSize:9, fontWeight:800,
+          color:"white", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>
+          {badge}
+        </span>
       )}
+    </button>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SEARCH BAR
+───────────────────────────────────────────────────────── */
+function SearchBar() {
+  const [foc, setFoc] = useState(false);
+  return (
+    <div style={{ position:"relative", width:"100%", maxWidth:700 }}>
+      <Search style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
+        width:15, height:15, color:T.muted, pointerEvents:"none" }}/>
+      <input
+        placeholder="Search"
+        onFocus={()=>setFoc(true)} onBlur={()=>setFoc(false)}
+        style={{ width:"100%", background:"#2c333a",
+          border:`1px solid ${foc?"#579dff":"#454f59"}`,
+          borderRadius:5, padding:"8px 10px 8px 34px",
+          color:T.text, fontSize:13, outline:"none",
+          transition:"border 0.15s",
+          boxShadow: foc?"0 0 0 2px rgba(87,157,255,0.25)":"none" }}/>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Board Switcher Modal
-// ─────────────────────────────────────────────────────────────────────────────
-function BoardSwitcherModal({ onClose }: { onClose: () => void }) {
+/* ─────────────────────────────────────────────────────────
+   BOARD SWITCHER MODAL
+───────────────────────────────────────────────────────── */
+function SwitcherModal({ onClose }: { onClose:()=>void }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
-      <div className="relative mt-14 bg-[#282e33] rounded-xl w-full max-w-[556px] mx-4 shadow-2xl border border-[#3d4c5c]" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-[#3d4c5c]">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[#b6c2cf] font-semibold text-[15px]">Switch boards</h2>
-            <div className="flex items-center gap-1">
-              <button className="p-1.5 hover:bg-[#3d4c5c] rounded text-[#9fadbc]"><Pin className="w-4 h-4" /></button>
-              <button onClick={onClose} className="p-1.5 hover:bg-[#3d4c5c] rounded text-[#9fadbc]"><X className="w-4 h-4" /></button>
-            </div>
+    <div style={{ position:"fixed", inset:0, zIndex:9999, display:"flex",
+      alignItems:"flex-start", justifyContent:"center" }} onClick={onClose}>
+      <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(2px)" }}/>
+      <div style={{ position:"relative", marginTop:60, width:"100%", maxWidth:560, margin:"60px 16px 0",
+        background:"#282e33", borderRadius:14, boxShadow:"0 16px 48px rgba(0,0,0,0.6)",
+        border:`1px solid ${T.border}`, overflow:"hidden" }}
+        onClick={e=>e.stopPropagation()}>
+        <div style={{ padding:"16px 16px 12px", borderBottom:`1px solid ${T.border}` }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+            <span style={{ color:T.text, fontWeight:600, fontSize:15 }}>Switch boards</span>
+            <button onClick={onClose} style={{ padding:6, background:"none", border:"none", cursor:"pointer",
+              color:T.muted, borderRadius:4, display:"flex" }}>
+              <X size={16}/>
+            </button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9fadbc]" />
+          <div style={{ position:"relative" }}>
+            <Search style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
+              width:14, height:14, color:T.muted }}/>
             <input autoFocus placeholder="Search your boards"
-              className="w-full bg-[#1d2125] border border-[#579dff] rounded-[4px] pl-9 pr-3 py-2 text-[#b6c2cf] placeholder:text-[#9fadbc] text-[13px] focus:outline-none" />
+              style={{ width:"100%", background:"#1d2125", border:`1px solid ${T.blue}`,
+                borderRadius:4, padding:"8px 10px 8px 32px", color:T.text, fontSize:13, outline:"none" }}/>
           </div>
         </div>
-        <div className="px-4 pt-3 flex gap-2">
-          <button className="px-3 py-1.5 bg-[#579dff]/20 text-[#579dff] rounded-[4px] text-[13px] font-semibold border border-[#579dff]/30">All</button>
-          <button className="px-3 py-1.5 text-[#9fadbc] hover:bg-[#3d4c5c] rounded-[4px] text-[13px] transition-colors">Eromose Okuekhamhen's w...</button>
-        </div>
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-3 text-[#9fadbc] text-[11px] font-bold uppercase tracking-widest">
-            <Clock className="w-3.5 h-3.5" /><span>Recent</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button className="relative rounded-lg overflow-hidden hover:scale-[1.015] transition-transform">
-              <div className="h-[88px] bg-gradient-to-br from-[#0747a6] via-[#0052cc] to-[#0069d9]" />
-              <div className="absolute inset-x-0 bottom-0 p-2.5"><span className="text-white font-semibold text-[13px]">new one1</span></div>
-            </button>
-            <button className="relative rounded-lg overflow-hidden hover:scale-[1.015] transition-transform">
-              <div className="h-[88px] bg-gradient-to-br from-orange-400 via-pink-400 to-cyan-400" />
-              <div className="absolute top-2 right-2"><span className="bg-white/90 text-gray-800 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">Template</span></div>
-              <div className="absolute inset-x-0 bottom-0 p-2.5"><span className="text-white font-semibold text-[13px]">Kanban Template</span></div>
-            </button>
-          </div>
-        </div>
-        <div className="px-4 pb-4">
-          <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#3d4c5c] rounded-[4px] transition-colors text-[#9fadbc] text-[13px]">
-            <ChevronRight className="w-4 h-4" /><span>Eromose Okuekhamhen's workspace</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// INBOX  — two modes:
-//   • Full page  (only inbox open): dark-navy full screen, centered content
-//   • Sidebar    (inbox + other panels): narrow 272px dark-navy column
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Icon cluster shared by both inbox modes */
-function InboxIconCluster({ large = false }: { large?: boolean }) {
-  const base  = large ? 72 : 56;
-  const sm    = large ? 64 : 50;
-  const icon  = large ? 28 : 22;
-  const iconSm= large ? 24 : 18;
-  return (
-    <div className="relative mx-auto" style={{ width: large ? 220 : 190, height: large ? 220 : 190 }}>
-      {/* Mail */}
-      <div style={{ position:"absolute", top: large?36:30, left: large?28:22, width:base, height:base }}
-        className="rounded-full bg-[#162032] border-2 border-[#2490c8] flex items-center justify-center shadow-lg">
-        <Mail style={{ width:icon, height:icon }} className="text-[#579dff]" />
-      </div>
-      {/* Chrome + NEW */}
-      <div style={{ position:"absolute", top:2, right: large?28:22, width:sm, height:sm }}
-        className="rounded-full bg-[#162032] border-2 border-[#4fc3f7] flex items-center justify-center shadow-lg">
-        <Chrome style={{ width:iconSm, height:iconSm }} className="text-[#4fc3f7]" />
-        <span className="absolute -top-[7px] -right-[8px] bg-[#ef5c48] text-white text-[8px] px-[5px] py-[2px] rounded font-bold leading-none">NEW</span>
-      </div>
-      {/* Mobile */}
-      <div style={{ position:"absolute", top: large?68:56, right: large?68:56, width: large?52:46, height: large?52:46 }}
-        className="rounded-full bg-[#1e1a0e] border-2 border-[#f5a623] flex items-center justify-center shadow-lg">
-        <Smartphone style={{ width:iconSm, height:iconSm }} className="text-[#f5a623]" />
-      </div>
-      {/* Slack */}
-      <div style={{ position:"absolute", bottom: large?32:26, left: large?18:14, width:sm, height:sm }}
-        className="rounded-full bg-[#12102a] border-2 border-[#7c4dff] flex items-center justify-center shadow-lg">
-        <Slack style={{ width:iconSm, height:iconSm }} className="text-[#7c4dff]" />
-      </div>
-      {/* Teams */}
-      <div style={{ position:"absolute", bottom: large?14:10, right: large?38:30, width:sm, height:sm }}
-        className="rounded-full bg-[#12102a] border-2 border-[#5b5fc7] flex items-center justify-center shadow-lg">
-        <Grid3x3 style={{ width:iconSm, height:iconSm }} className="text-[#5b5fc7]" />
-      </div>
-    </div>
-  );
-}
-
-/** Inbox as full-page view (Image 4) */
-function InboxFullPage() {
-  return (
-    // Dark navy gradient — exactly Image 4 background
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "linear-gradient(180deg,#1a2540 0%,#1c2a4a 100%)" }}>
-      {/* Title pinned top-left */}
-      <div className="px-5 pt-4 flex items-center gap-2">
-        <Inbox className="w-[18px] h-[18px] text-[#b6c2cf]" />
-        <span className="text-[#b6c2cf] font-bold text-[16px]">Inbox</span>
-      </div>
-
-      {/* Centered content — full width */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-6 px-6">
-        {/* Wide add-a-card input — spans most of width */}
-        <div className="w-full max-w-[860px] mb-10">
-          <div className="bg-[#22303f] border border-[#2e3f54] rounded-[6px] px-4 py-3 text-[#9fadbc] text-[14px] cursor-text hover:border-[#579dff]/50 transition-colors">
-            Add a card
-          </div>
-        </div>
-
-        {/* Consolidate section */}
-        <h2 className="text-[#b6c2cf] font-bold text-[17px] mb-10">Consolidate your to-dos</h2>
-        <InboxIconCluster large />
-        <div className="flex items-center gap-2 text-[#9fadbc] text-[13px] mt-10">
-          <Lock className="w-3.5 h-3.5" />
-          <span>Inbox is only visible to you</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Inbox as narrow sidebar (Image 1, 2, 3) */
-function InboxSidebar() {
-  return (
-    // Same dark-navy background, fixed 272px, right border
-    <div className="flex-shrink-0 flex flex-col overflow-hidden"
-      style={{ width:272, minWidth:272, background:"linear-gradient(180deg,#1a2540 0%,#1c2a4a 100%)", borderRight:"1px solid rgba(61,76,92,0.5)" }}>
-      {/* Title */}
-      <div className="px-4 pt-3 pb-2 flex items-center gap-2">
-        <Inbox className="w-[17px] h-[17px] text-[#b6c2cf]" />
-        <span className="text-[#b6c2cf] font-bold text-[14px]">Inbox</span>
-      </div>
-      {/* Add a card */}
-      <div className="px-3 pb-3">
-        <div className="bg-[#22303f] border border-[#2e3f54] rounded-[4px] px-3 py-[7px] text-[#9fadbc] text-[13px] cursor-text hover:border-[#579dff]/50 transition-colors">
-          Add a card
-        </div>
-      </div>
-      {/* Consolidate */}
-      <div className="flex-1 flex flex-col items-center justify-center px-3 pb-6">
-        <h3 className="text-[#b6c2cf] font-semibold text-[13px] mb-6 text-center">Consolidate your to-dos</h3>
-        <InboxIconCluster />
-        <div className="flex items-center gap-2 text-[#9fadbc] text-[12px] mt-6">
-          <Lock className="w-3.5 h-3.5" />
-          <span>Inbox is only visible to you</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PLANNER — two modes:
-//   • Full page  (no board): Image 3 & 5 — dark bg, wide 7-day calendar
-//   • Compact    (with board): Image 2 — single-day Wed 23 column
-// ─────────────────────────────────────────────────────────────────────────────
-const DAYS  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const DATES = [20,21,22,23,24,25,26];
-const SLOTS = ["8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm"];
-
-type CE = { col:number; row:number; label:string; color:string; box?:boolean };
-const EVENTS: CE[] = [
-  { col:1,row:1,label:"9am",           color:"bg-[#1f6b44] border-l-[3px] border-green-400" },
-  { col:2,row:1,label:"9am",           color:"bg-[#1f6b44] border-l-[3px] border-green-400" },
-  { col:2,row:1,label:"9:15",          color:"bg-[#1d3f7a] border-l-[3px] border-blue-400",  box:true },
-  { col:3,row:1,label:"9:30am",        color:"bg-[#1f6b44] border-l-[3px] border-green-400", box:true },
-  { col:4,row:1,label:"9am",           color:"bg-[#1f6b44] border-l-[3px] border-green-400" },
-  { col:5,row:1,label:"9 - 10am",      color:"bg-[#1d3f7a] border-l-[3px] border-blue-400" },
-  { col:2,row:2,label:"10am",          color:"bg-[#1f6b44] border-l-[3px] border-green-400", box:true },
-  { col:3,row:2,label:"11:30-12:30pm", color:"bg-[#1f6b44] border-l-[3px] border-green-400" },
-  { col:4,row:2,label:"12pm",          color:"bg-[#1d3f7a] border-l-[3px] border-blue-400",  box:true },
-  { col:5,row:2,label:"10:30-11:30am", color:"bg-[#1d3f7a] border-l-[3px] border-blue-400" },
-  { col:2,row:3,label:"11am",          color:"bg-[#5c3000] border-l-[3px] border-orange-400" },
-  { col:3,row:3,label:"11am",          color:"bg-[#5c3000] border-l-[3px] border-orange-400" },
-  { col:4,row:3,label:"11am",          color:"bg-[#5c3000] border-l-[3px] border-orange-400" },
-  { col:5,row:3,label:"11am",          color:"bg-[#1d3f7a] border-l-[3px] border-blue-400" },
-  { col:2,row:4,label:"11:30am",       color:"bg-[#5c3000] border-l-[3px] border-orange-400", box:true },
-  { col:3,row:4,label:"11:30-12:30pm", color:"bg-[#5c3000] border-l-[3px] border-orange-400" },
-  { col:4,row:4,label:"11:30-12:30pm", color:"bg-[#3d1f6d] border-l-[3px] border-purple-400" },
-  { col:5,row:4,label:"12pm",          color:"bg-[#1d3f7a] border-l-[3px] border-blue-400",  box:true },
-  { col:5,row:5,label:"12:30pm",       color:"bg-[#1d3f7a] border-l-[3px] border-blue-400",  box:true },
-  { col:3,row:5,label:"+ — — —",       color:"bg-[#2a3a4a]/70 border border-dashed border-[#4a6880]" },
-];
-
-function PlannerFullPage() {
-  return (
-    // Dark background — exactly Image 3 & 5
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ background:"#1d2125" }}>
-      {/* Header */}
-      <div className="px-6 py-5 flex items-start gap-4 flex-shrink-0">
-        <div className="w-[60px] h-[60px] rounded-xl bg-[#22272b] flex items-center justify-center flex-shrink-0">
-          <Calendar className="w-7 h-7 text-[#9fadbc]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-[#b6c2cf] font-bold text-[22px] mb-0.5">Planner</h2>
-          <p className="text-[#9fadbc] text-[13px] leading-relaxed">Connect your calendars to get a side-by-side view of your Planner and your to-do's.</p>
-          <p className="text-[13px] mt-0.5">
-            <button className="text-[#579dff] hover:underline font-semibold">Try Premium</button>{" "}
-            <span className="text-[#9fadbc]">for free to schedule your to-dos on your Planner.</span>
-          </p>
-          <div className="flex items-center gap-1.5 mt-1 text-[#9fadbc] text-xs">
-            <Lock className="w-3 h-3" /><span>Only you can see your Planner.</span>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 bg-[#22272b] hover:bg-[#2c333a] border border-[#3d4c5c] text-[#b6c2cf] px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex-shrink-0 whitespace-nowrap">
-          <Calendar className="w-3.5 h-3.5" />Connect a calendar
-        </button>
-      </div>
-      {/* 7-day grid */}
-      <div className="flex-1 overflow-auto">
-        <div className="min-w-[700px]">
-          <div className="grid sticky top-0 z-10 bg-[#1d2125] border-b border-[#3d4c5c]/40"
-            style={{ gridTemplateColumns:"44px repeat(7,1fr)" }}>
-            <div />
-            {DAYS.map((d,i) => (
-              <div key={d} className={`py-3 text-center border-l border-[#3d4c5c]/20 ${i===3?"bg-[#1a2a3a]/40":""}`}>
-                <div className="text-[#9fadbc] text-[11px] mb-1">{d}</div>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold mx-auto ${i===3?"bg-[#579dff] text-white":"text-[#b6c2cf]"}`}>{DATES[i]}</div>
-              </div>
+        <div style={{ padding:16 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            {[
+              { name:"My first workspace board", g:"linear-gradient(135deg,#0044b0,#0088c8)" },
+              { name:"Kanban Template",           g:"linear-gradient(135deg,#f97316,#ec4899,#06b6d4)" },
+            ].map(b=>(
+              <button key={b.name} style={{ position:"relative", borderRadius:10, overflow:"hidden",
+                border:"none", cursor:"pointer", padding:0 }}>
+                <div style={{ height:88, background:b.g }}/>
+                <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                  padding:"8px 10px", background:"linear-gradient(transparent,rgba(0,0,0,0.5))", textAlign:"left" }}>
+                  <span style={{ color:"white", fontWeight:600, fontSize:13 }}>{b.name}</span>
+                </div>
+              </button>
             ))}
           </div>
-          {SLOTS.map((slot,si) => (
-            <div key={slot} className="grid border-b border-[#3d4c5c]/15"
-              style={{ gridTemplateColumns:"44px repeat(7,1fr)", minHeight:72 }}>
-              <div className="pt-1.5 pr-2 text-[10px] text-[#9fadbc] text-right leading-none">{slot}</div>
-              {DAYS.map((_,di) => {
-                const evts = EVENTS.filter(e => e.col===di && e.row===si);
-                return (
-                  <div key={di} className={`border-l border-[#3d4c5c]/15 p-[3px] ${di===3?"bg-[#1a2a3a]/20":""}`}>
-                    {evts.map((ev,ei) => (
-                      <div key={ei} className={`${ev.color} rounded-[2px] px-1.5 py-[3px] mb-[2px] text-[10px] text-white/90 truncate flex items-center justify-between`}>
-                        <span className="truncate">{ev.label}</span>
-                        {ev.box && <span className="w-3 h-3 border border-white/30 rounded-[2px] ml-1 flex-shrink-0" />}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
         </div>
       </div>
     </div>
   );
 }
 
-/** Compact planner — single-day view shown when Board is also open (Image 2) */
-function PlannerCompact() {
-  const todayEvts = EVENTS.filter(e => e.col === 3);
+/* ─────────────────────────────────────────────────────────
+   INBOX PANEL
+   Matches screenshot:
+   • dark navy bg
+   • "Inbox" title + ≡ filter + ⋯
+   • "Add a card" input
+   • cards below
+   • "Consolidate your to-dos" collapsed bottom bar
+───────────────────────────────────────────────────────── */
+function InboxPanel({ cards, onAdd }: {
+  cards: {id:string;title:string}[];
+  onAdd:(t:string)=>void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [consolidateOpen, setConsolidateOpen] = useState(false);
+
+  const submit = () => {
+    if (draft.trim()) { onAdd(draft.trim()); setDraft(""); }
+  };
+
+  /* mini icon cluster for the collapsed bar */
+  const CLUSTERS = [
+    { bg:"#162032", border:"#2490c8", color:"#579dff",  C: Mail },
+    { bg:"#12102a", border:"#7c4dff", color:"#9f7dff",  C: Grid3x3 },
+    { bg:"#1e1a0e", border:"#f5a623", color:"#f5a623",  C: Smartphone },
+    { bg:"#162032", border:"#4fc3f7", color:"#4fc3f7",  C: MessageSquare },
+  ];
+
   return (
-    <div className="flex-shrink-0 flex flex-col overflow-hidden border-r border-[#3d4c5c]/40"
-      style={{ width:370, minWidth:300, background:"#1d2125" }}>
+    <div style={{ width:282, minWidth:282, flexShrink:0, display:"flex", flexDirection:"column",
+      background:`linear-gradient(180deg,${T.inboxBg} 0%,${T.inboxBg2} 100%)`,
+      borderRight:`1px solid ${T.border}` }}>
+
       {/* Header */}
-      <div className="px-4 py-4 border-b border-[#3d4c5c]/40 flex-shrink-0">
-        <div className="flex justify-end mb-2">
-          <div className="flex items-center gap-1.5 bg-[#22272b] border border-[#3d4c5c] rounded-[4px] px-2 py-[3px] text-[#9fadbc] text-xs">
-            <Search className="w-3 h-3" /><span className="font-mono">/</span>
+      <div style={{ padding:"13px 14px 8px", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+        <Inbox size={17} style={{ color:T.muted }}/>
+        <span style={{ color:T.text, fontWeight:700, fontSize:15, flex:1 }}>Inbox</span>
+        <HovBtn><AlignJustify size={15}/></HovBtn>
+        <HovBtn><MoreHorizontal size={15}/></HovBtn>
+      </div>
+
+      {/* Add a card input */}
+      <div style={{ padding:"0 11px 10px", flexShrink:0 }}>
+        <div style={{ background:T.inboxInput, border:`1px solid rgba(61,76,92,0.55)`,
+          borderRadius:6, padding:"9px 12px", display:"flex", alignItems:"center", gap:8 }}>
+          <input value={draft} onChange={e=>setDraft(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&submit()}
+            placeholder="Add a card"
+            style={{ background:"transparent", border:"none", outline:"none",
+              color:T.muted, fontSize:13, width:"100%", caretColor:"white" }}/>
+        </div>
+      </div>
+
+      {/* Card list */}
+      <div style={{ flex:1, overflowY:"auto", padding:"0 10px 8px" }}>
+        {cards.map(c=>(
+          <div key={c.id}
+            style={{ background:T.inboxCard, borderRadius:8, padding:"10px 13px", marginBottom:5,
+              cursor:"pointer", transition:"background 0.12s", color:T.text, fontSize:13.5, lineHeight:1.45 }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.inboxCardH)}
+            onMouseLeave={e=>(e.currentTarget.style.background=T.inboxCard)}>
+            {c.title}
+          </div>
+        ))}
+      </div>
+
+      {/* Consolidate bottom bar */}
+      <div style={{ flexShrink:0, borderTop:`1px solid rgba(61,76,92,0.35)` }}>
+        {!consolidateOpen ? (
+          <div style={{ padding:"9px 12px", display:"flex", alignItems:"center", gap:9,
+            cursor:"pointer" }} onClick={()=>setConsolidateOpen(true)}>
+            {/* icon cluster overlapping circles */}
+            <div style={{ position:"relative", width:54, height:26, flexShrink:0 }}>
+              {CLUSTERS.map((ic,i)=>(
+                <div key={i} style={{ position:"absolute", left:i*12, top:1,
+                  width:24, height:24, borderRadius:"50%",
+                  background:ic.bg, border:`2px solid ${ic.border}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  zIndex:4-i }}>
+                  <ic.C size={11} style={{ color:ic.color }}/>
+                </div>
+              ))}
+            </div>
+            <span style={{ color:T.muted, fontSize:12.5, flex:1 }}>Consolidate your to-dos</span>
+            <ChevronUp size={14} style={{ color:T.muted, flexShrink:0 }}/>
+          </div>
+        ) : (
+          <div style={{ padding:"14px 14px 16px" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+              <span style={{ color:T.text, fontWeight:600, fontSize:13 }}>Consolidate your to-dos</span>
+              <button onClick={()=>setConsolidateOpen(false)}
+                style={{ padding:3, background:"none", border:"none", cursor:"pointer", color:T.muted, display:"flex" }}>
+                <X size={14}/>
+              </button>
+            </div>
+            <p style={{ color:T.muted, fontSize:12, lineHeight:1.55, marginBottom:12 }}>
+              Capture from email, mobile, Slack, Teams, and Chrome — all in one Inbox.
+            </p>
+            <div style={{ display:"flex", justifyContent:"center", gap:14, marginBottom:12 }}>
+              {CLUSTERS.map((ic,i)=>(
+                <div key={i} style={{ width:38, height:38, borderRadius:"50%",
+                  background:ic.bg, border:`2px solid ${ic.border}`,
+                  display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <ic.C size={16} style={{ color:ic.color }}/>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:5, justifyContent:"center" }}>
+              <Lock size={11} style={{ color:T.muted }}/>
+              <span style={{ color:T.muted, fontSize:11 }}>Inbox is only visible to you</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* tiny hover-button helper */
+function HovBtn({ children }: { children:React.ReactNode }) {
+  const [h, setH] = useState(false);
+  return (
+    <button onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{ padding:5, background:h?"rgba(255,255,255,0.09)":"none",
+        border:"none", cursor:"pointer", color:T.muted, borderRadius:4, display:"flex",
+        transition:"background 0.12s" }}>
+      {children}
+    </button>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   PLANNER PANEL
+   Matches screenshot exactly:
+   • Header with Planner title, desc, Upgrade link, lock, "Connect an account" button
+   • "Wed 23" date
+   • Time grid with colored event bars
+   • Card-popup overlay at bottom (purple new-card block + dark detail card)
+───────────────────────────────────────────────────────── */
+const TIME_SLOTS = ["9am","10am","11am","12pm","1pm","2pm","3pm","4pm"];
+
+type PlanEv = { slot:number; label:string; color:string; leftBorder:string; hasBox?:boolean };
+const PLANNER_EVENTS: PlanEv[] = [
+  { slot:0, label:"9am",     color:"#1a5c38", leftBorder:"#4ade80", hasBox:false },
+  { slot:0, label:"9:30am",  color:"#1a3c72", leftBorder:"#60a5fa", hasBox:true  },
+  { slot:1, label:"10am",    color:"#1a5c38", leftBorder:"#4ade80", hasBox:true  },
+];
+
+function PlannerPanel() {
+  return (
+    <div style={{ width:430, minWidth:360, flexShrink:0, display:"flex", flexDirection:"column",
+      background:T.planBg, borderRight:`1px solid ${T.border}`, overflow:"hidden" }}>
+
+      {/* ── Header ── */}
+      <div style={{ padding:"18px 22px 16px", borderBottom:`1px solid rgba(61,76,92,0.3)`, flexShrink:0 }}>
+        {/* keyboard hint top-right */}
+        <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:4,
+            background:"#22272b", border:`1px solid ${T.border}`,
+            borderRadius:4, padding:"2px 8px" }}>
+            <Search size={10} style={{ color:T.muted }}/>
+            <span style={{ color:T.muted, fontSize:11, fontFamily:"monospace" }}>/</span>
           </div>
         </div>
-        <h2 className="text-[#b6c2cf] font-bold text-[20px] text-center mb-1">Planner</h2>
-        <p className="text-[#9fadbc] text-[12px] text-center leading-relaxed mb-1.5">
-          Connect your calendars to get a side-by-side view of your Planner and your to-do's.
+
+        <h2 style={{ color:T.text, fontWeight:800, fontSize:26, textAlign:"center",
+          marginBottom:8, letterSpacing:"-0.4px" }}>Planner</h2>
+
+        <p style={{ color:T.muted, fontSize:12.5, textAlign:"center", lineHeight:1.6, marginBottom:6 }}>
+          Connect your calendars to get a side-by-side<br/>view of your Planner and your to-do&apos;s.
         </p>
-        <p className="text-[12px] text-center mb-2">
-          <span className="text-[#579dff] font-semibold">Premium:</span>{" "}
-          <span className="text-[#9fadbc]">Schedule your to-dos on your Planner and connect multiple calendar accounts.</span>
+
+        <p style={{ fontSize:12.5, textAlign:"center", marginBottom:6, lineHeight:1.5 }}>
+          <button style={{ background:"none", border:"none", cursor:"pointer", color:T.blue,
+            fontWeight:600, padding:0, fontSize:12.5 }}>Upgrade</button>
+          <span style={{ color:T.muted }}> to schedule your to-dos on your Planner and connect multiple calendar accounts.</span>
         </p>
-        <div className="flex items-center justify-center gap-1 text-[#9fadbc] text-[11px] mb-3">
-          <Lock className="w-3 h-3" /><span>Only you can see your Planner.</span>
+
+        <div style={{ display:"flex", alignItems:"center", gap:5, justifyContent:"center", marginBottom:14 }}>
+          <Lock size={11} style={{ color:T.muted }}/>
+          <span style={{ color:T.muted, fontSize:12 }}>Only you can see your Planner.</span>
         </div>
-        <div className="flex justify-center">
-          <button className="flex items-center gap-2 bg-[#22272b] hover:bg-[#2c333a] border border-[#3d4c5c] text-[#b6c2cf] px-3 py-1.5 rounded-[4px] text-[13px] font-medium transition-colors">
-            <Calendar className="w-3.5 h-3.5" />Connect a calendar
+
+        {/* Connect an account button */}
+        <div style={{ display:"flex", justifyContent:"center" }}>
+          <button style={{ display:"flex", alignItems:"center", gap:8,
+            background:T.blueDark, color:"white",
+            border:"none", borderRadius:7, padding:"10px 22px",
+            fontSize:13.5, fontWeight:600, cursor:"pointer", transition:"background 0.15s" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="#0052cc")}
+            onMouseLeave={e=>(e.currentTarget.style.background=T.blueDark)}>
+            <Aperture size={15}/>
+            Connect an account
           </button>
         </div>
       </div>
-      {/* Wed 23 label */}
-      <div className="px-4 pt-3 pb-1 flex-shrink-0">
-        <div className="text-[#9fadbc] text-[12px]">Wed</div>
-        <div className="text-[#b6c2cf] font-bold text-[22px] leading-none">23</div>
+
+      {/* ── Wed 23 ── */}
+      <div style={{ padding:"12px 18px 6px", flexShrink:0 }}>
+        <div style={{ color:T.muted, fontSize:12 }}>Wed</div>
+        <div style={{ color:T.text, fontWeight:800, fontSize:28, lineHeight:1, letterSpacing:"-0.5px" }}>23</div>
       </div>
-      {/* Single-day time slots */}
-      <div className="flex-1 overflow-y-auto">
-        {SLOTS.map((slot,si) => {
-          const evts = todayEvts.filter(e => e.row===si);
+
+      {/* ── Time grid ── */}
+      <div style={{ flex:1, overflowY:"auto", position:"relative" }}>
+        {TIME_SLOTS.map((slot,si)=>{
+          const evts = PLANNER_EVENTS.filter(e=>e.slot===si);
           return (
-            <div key={slot} className="flex border-b border-[#3d4c5c]/15" style={{ minHeight:72 }}>
-              <div className="w-10 px-2 pt-1.5 text-[10px] text-[#9fadbc] text-right flex-shrink-0 leading-none">{slot}</div>
-              <div className="flex-1 p-[3px] space-y-[2px] bg-[#1a2332]/20">
-                {evts.map((ev,i) => (
-                  <div key={i} className={`${ev.color} rounded-[2px] px-1.5 py-[3px] text-[10px] text-white/90 truncate flex items-center justify-between`}>
+            <div key={slot} style={{ display:"flex", minHeight:72,
+              borderBottom:`1px solid rgba(61,76,92,0.15)` }}>
+              <div style={{ width:42, paddingTop:6, paddingRight:8,
+                fontSize:10.5, color:T.muted, textAlign:"right", flexShrink:0 }}>{slot}</div>
+              <div style={{ flex:1, padding:"3px 6px 3px 2px",
+                background:`rgba(26,33,50,${si===0?0.25:0.1})` }}>
+                {evts.map((ev,i)=>(
+                  <div key={i} style={{
+                    background:ev.color,
+                    borderLeft:`3px solid ${ev.leftBorder}`,
+                    borderRadius:3, padding:"4px 8px", marginBottom:2,
+                    fontSize:11, color:"rgba(255,255,255,0.88)",
+                    display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                     <span>{ev.label}</span>
-                    {ev.box && <span className="w-3 h-3 border border-white/30 rounded-[2px] flex-shrink-0" />}
+                    {ev.hasBox && (
+                      <span style={{ width:12, height:12,
+                        border:"1px solid rgba(255,255,255,0.35)", borderRadius:2, flexShrink:0 }}/>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           );
         })}
+
+        {/* ── Purple "new card" overlay block (matches screenshot) ── */}
+        <div style={{ margin:"0 8px 0 44px", position:"relative" }}>
+          {/* The purple/lavender add-card block */}
+          <div style={{ background:"hsl(267,60%,72%)", borderRadius:8,
+            padding:"10px 16px", marginBottom:0,
+            display:"flex", alignItems:"center", justifyContent:"space-between",
+            minHeight:48 }}>
+            <Plus size={16} style={{ color:"rgba(30,20,50,0.7)" }}/>
+            <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+              <div style={{ height:2.5, width:44, background:"rgba(30,20,50,0.25)", borderRadius:2 }}/>
+              <div style={{ height:2.5, width:28, background:"rgba(30,20,50,0.25)", borderRadius:2 }}/>
+            </div>
+          </div>
+
+          {/* Dark card detail overlay — pops forward */}
+          <div style={{ position:"relative", margin:"0 -4px",
+            background:"#1e2430", borderRadius:10,
+            boxShadow:"0 8px 30px rgba(0,0,0,0.6)",
+            padding:"14px 14px 12px", border:`1px solid rgba(61,76,92,0.5)`,
+            zIndex:2 }}>
+            {/* skeleton lines */}
+            {[["60%","rgba(182,194,207,0.35)"],["80%","rgba(182,194,207,0.22)"],
+              ["45%","rgba(182,194,207,0.22)"]].map(([w,c],i)=>(
+              <div key={i} style={{ height:9, width:w as string, background:c,
+                borderRadius:4, marginBottom:8 }}/>
+            ))}
+            {/* bottom icons row */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:10 }}>
+              <div style={{ width:16, height:16, borderRadius:"50%",
+                background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ color:T.muted, fontSize:9 }}>ℹ</span>
+              </div>
+              <div style={{ width:14, height:14, borderRadius:2, border:`1px solid ${T.border}` }}/>
+              <div style={{ width:18, height:18, borderRadius:"50%",
+                background:"hsl(45,85%,55%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ fontSize:9 }}>⚡</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BOARD — light-blue gradient background (Image 6)
-// ─────────────────────────────────────────────────────────────────────────────
-function BoardCard({ card }: { card: Card }) {
+/* ─────────────────────────────────────────────────────────
+   BOARD — blue-to-teal gradient, "My first workspace board"
+───────────────────────────────────────────────────────── */
+function BoardCard({ card }: { card:Card }) {
+  const [hov, setHov] = useState(false);
   return (
-    <div className="bg-[#22272b] hover:bg-[#2c333a] rounded-[8px] px-3 py-2.5 cursor-pointer transition-colors shadow-sm hover:shadow-md">
-      <p className="text-[#b6c2cf] text-[13px] leading-relaxed">{card.title}</p>
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:hov?T.cardHov:T.cardBg, borderRadius:9, padding:"10px 12px",
+        cursor:"pointer", transition:"background 0.12s", marginBottom:6, boxShadow:"0 1px 4px rgba(0,0,0,0.3)" }}>
+      <p style={{ color:T.text, fontSize:13, lineHeight:1.45, margin:0 }}>{card.title}</p>
     </div>
   );
 }
 
-function BoardList({ list, onAddCard, narrow=false }: { list:List; onAddCard:(id:string,t:string)=>void; narrow?:boolean }) {
+function BoardList({ list, onAddCard }: { list:List; onAddCard:(id:string,t:string)=>void }) {
   const [adding, setAdding] = useState(false);
   const [title,  setTitle]  = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => { if (adding) ref.current?.focus(); }, [adding]);
+  useEffect(()=>{ if(adding) ref.current?.focus(); },[adding]);
 
   const submit = () => {
     if (title.trim()) { onAddCard(list.id, title.trim()); setTitle(""); setAdding(false); }
   };
-  const w = narrow ? "w-[240px] min-w-[240px]" : "w-[272px] min-w-[272px]";
 
   return (
-    <div className={`${w} bg-[#101204] rounded-xl flex flex-col max-h-full flex-shrink-0`}>
-      <div className="px-3 py-2.5 flex items-center gap-1">
-        <h3 className="text-[#b6c2cf] font-semibold text-[13px] flex-1 px-1">{list.title}</h3>
-        {/* collapse arrows */}
-        <button className="p-1 hover:bg-white/10 rounded text-[#9fadbc] hover:text-[#b6c2cf] transition-colors">
-          <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-            <path d="M5 1L2 5L5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M9 1L12 5L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <button className="p-1 hover:bg-white/10 rounded text-[#9fadbc] hover:text-[#b6c2cf] transition-colors">
-          <MoreHorizontal className="w-3.5 h-3.5" />
-        </button>
+    <div style={{ width:272, minWidth:272, background:T.listBg, borderRadius:12,
+      display:"flex", flexDirection:"column", flexShrink:0, maxHeight:"100%" }}>
+      {/* list header */}
+      <div style={{ padding:"10px 12px 8px", display:"flex", alignItems:"center" }}>
+        <span style={{ color:T.text, fontWeight:600, fontSize:14, flex:1 }}>{list.title}</span>
+        <HovBtn><MoreHorizontal size={15}/></HovBtn>
       </div>
-
-      <div className="flex-1 overflow-y-auto px-2 space-y-1.5 pb-1">
-        {list.cards.map(card => <BoardCard key={card.id} card={card} />)}
+      {/* cards */}
+      <div style={{ flex:1, overflowY:"auto", padding:"0 8px 4px" }}>
+        {list.cards.map(c=><BoardCard key={c.id} card={c}/>)}
         {adding && (
-          <div className="bg-[#22272b] rounded-[8px] p-2 space-y-2">
-            <textarea ref={ref} value={title} onChange={e => setTitle(e.target.value)}
+          <div style={{ background:T.cardBg, borderRadius:9, padding:10, marginBottom:6 }}>
+            <textarea ref={ref} value={title} onChange={e=>setTitle(e.target.value)}
               placeholder="Enter a title for this card…" rows={2}
-              className="w-full bg-transparent text-[#b6c2cf] text-[13px] placeholder:text-[#9fadbc] border-0 outline-none resize-none leading-relaxed"
-              onKeyDown={e => {
-                if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
-                if (e.key==="Escape") { setAdding(false); setTitle(""); }
-              }} />
-            <div className="flex items-center gap-2">
-              <button onClick={submit} className="bg-[#579dff] hover:bg-[#85b8ff] text-[#1d2125] text-[13px] font-semibold px-3 py-[6px] rounded-[3px] transition-colors">Add card</button>
-              <button onClick={() => { setAdding(false); setTitle(""); }} className="p-1.5 hover:bg-white/10 rounded text-[#9fadbc]"><X className="w-4 h-4" /></button>
+              style={{ width:"100%", background:"transparent", border:"none", outline:"none",
+                color:T.text, fontSize:13, resize:"none", lineHeight:1.5, fontFamily:"inherit" }}
+              onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();submit();}
+                              if(e.key==="Escape"){setAdding(false);setTitle("");} }}/>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
+              <button onClick={submit}
+                style={{ background:"#579dff", color:"#1d2125", border:"none",
+                  borderRadius:4, padding:"6px 14px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                Add card
+              </button>
+              <button onClick={()=>{setAdding(false);setTitle("");}}
+                style={{ padding:4, background:"none", border:"none", cursor:"pointer",
+                  color:T.muted, display:"flex" }}>
+                <X size={15}/>
+              </button>
             </div>
           </div>
         )}
       </div>
-
+      {/* Add a card + copy icon row */}
       {!adding && (
-        <div className="px-2 pb-2 pt-0.5 flex items-center">
-          <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 text-[#9fadbc] hover:text-[#b6c2cf] hover:bg-white/5 rounded-lg px-2 py-1.5 transition-colors text-[13px] flex-1">
-            <Plus className="w-[14px] h-[14px]" /><span>Add a card</span>
+        <div style={{ padding:"3px 8px 8px", display:"flex", alignItems:"center" }}>
+          <button onClick={()=>setAdding(true)}
+            style={{ flex:1, display:"flex", alignItems:"center", gap:6,
+              color:T.muted, background:"none", border:"none", cursor:"pointer",
+              borderRadius:7, padding:"7px 8px", fontSize:13, transition:"background 0.1s" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.07)")}
+            onMouseLeave={e=>(e.currentTarget.style.background="none")}>
+            <Plus size={14}/><span>Add a card</span>
           </button>
-          <button className="p-1.5 hover:bg-white/5 rounded text-[#9fadbc] hover:text-[#b6c2cf] transition-colors">
+          {/* template/copy icon */}
+          <button style={{ padding:7, background:"none", border:"none", cursor:"pointer",
+            color:T.muted, borderRadius:4, display:"flex" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.07)")}
+            onMouseLeave={e=>(e.currentTarget.style.background="none")}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="1" y="3" width="9" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M4 3V2.5A1.5 1.5 0 0 1 5.5 1h6A1.5 1.5 0 0 1 13 2.5v6A1.5 1.5 0 0 1 11.5 10H11" stroke="currentColor" strokeWidth="1.3"/>
+              <rect x="0.75" y="3.25" width="8.5" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M3.5 3V2.5C3.5 1.67 4.17 1 5 1h6.5C12.33 1 13 1.67 13 2.5v6C13 9.33 12.33 10 11.5 10H11"
+                stroke="currentColor" strokeWidth="1.3"/>
             </svg>
           </button>
         </div>
@@ -471,113 +535,160 @@ function BoardList({ list, onAddCard, narrow=false }: { list:List; onAddCard:(id
   );
 }
 
-function BoardPanel({ lists, onAddCard, narrow=false, standalone=false }:
-  { lists:List[]; onAddCard:(id:string,t:string)=>void; narrow?:boolean; standalone?:boolean }) {
+function BoardArea({ lists, onAddCard }: { lists:List[]; onAddCard:(id:string,t:string)=>void }) {
   return (
-    // Light-blue gradient — exactly Image 6 background when board is only/rightmost panel
-    <div className="flex-1 flex flex-col overflow-hidden min-w-0"
-      style={{ background: standalone
-        ? "linear-gradient(135deg,#0052b8 0%,#0068cc 45%,#0090b8 100%)"
-        : "linear-gradient(135deg,#0052b8 0%,#0068cc 45%,#0090b8 100%)" }}>
+    <div style={{ flex:1, display:"flex", flexDirection:"column",
+      background:T.boardGrad, overflow:"hidden", minWidth:0 }}>
 
-      {/* Board sub-header */}
-      <div className="flex items-center gap-2 px-4 py-[9px] border-b border-white/10 flex-shrink-0">
-        <h1 className="text-white font-bold text-[15px]">new one1</h1>
-        <div className="flex items-center bg-black/20 rounded-[4px] ml-0.5">
-          <button className="p-[5px] hover:bg-white/10 rounded-l-[4px] text-white/70 hover:text-white transition-colors">
+      {/* ── Board sub-header (matches screenshot exactly) ── */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 14px",
+        borderBottom:"1px solid rgba(255,255,255,0.12)", flexShrink:0, flexWrap:"wrap" }}>
+
+        <span style={{ color:"white", fontWeight:700, fontSize:15, marginRight:2 }}>
+          My first workspace board
+        </span>
+
+        {/* grid / view toggle */}
+        <div style={{ display:"flex", background:"rgba(0,0,0,0.18)", borderRadius:4 }}>
+          <button style={{ padding:"5px 7px", background:"none", border:"none", cursor:"pointer",
+            color:"rgba(255,255,255,0.65)", display:"flex" }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="1"   y="1"   width="4.5" height="4.5" rx="0.8" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="7.5" y="1"   width="4.5" height="4.5" rx="0.8" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="1"   y="8.5" width="4.5" height="4.5" rx="0.8" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="7.5" y="8.5" width="4.5" height="4.5" rx="0.8" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+              <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+              <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+              <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
             </svg>
           </button>
-          <button className="p-[5px] hover:bg-white/10 rounded-r-[4px] text-white/70 hover:text-white transition-colors">
-            <ChevronRight className="w-3 h-3" />
+          <button style={{ padding:"5px 5px", background:"none", border:"none", cursor:"pointer",
+            color:"rgba(255,255,255,0.65)", display:"flex" }}>
+            <ChevronDown size={13}/>
           </button>
         </div>
-        <div className="h-4 w-px bg-white/20 mx-1" />
 
-        <div className="flex items-center gap-1 ml-auto">
-          <Avatar size="sm" ring />
-          <div className="h-4 w-px bg-white/20 mx-0.5" />
-          {/* On standalone board show more icons (Image 6) */}
-          {standalone && (
-            <>
-              <button title="Automation" className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><Zap className="w-[15px] h-[15px]" /></button>
-              <button title="Filter"     className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><Filter className="w-[15px] h-[15px]" /></button>
-            </>
-          )}
-          <button title="Filter"     className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><SlidersHorizontal className="w-[15px] h-[15px]" /></button>
-          <button title="Star"       className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><Star className="w-[15px] h-[15px]" /></button>
-          <button title="Visibility" className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><Lock className="w-[15px] h-[15px]" /></button>
-          <button className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-[13px] font-semibold px-2.5 py-[6px] rounded-[4px] transition-colors ml-0.5">
-            <Users className="w-3.5 h-3.5" />Share
+        {/* divider */}
+        <div style={{ width:1, height:18, background:"rgba(255,255,255,0.2)" }}/>
+
+        {/* right side */}
+        <div style={{ display:"flex", alignItems:"center", gap:4, marginLeft:"auto" }}>
+          <Av size={28}/>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,0.2)" }}/>
+          {/* filter icon */}
+          <button style={{ padding:"5px 7px", background:"none", border:"none", cursor:"pointer",
+            color:"rgba(255,255,255,0.65)", borderRadius:4, display:"flex" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.12)")}
+            onMouseLeave={e=>(e.currentTarget.style.background="none")}>
+            <SlidersHorizontal size={15}/>
           </button>
-          <button className="p-[6px] hover:bg-white/10 rounded text-white/60 hover:text-white/90 transition-colors"><MoreHorizontal className="w-[15px] h-[15px]" /></button>
+          {/* Share + badge */}
+          <button style={{ display:"flex", alignItems:"center", gap:6,
+            background:"rgba(255,255,255,0.0)", color:"white",
+            border:"1px solid rgba(255,255,255,0.55)",
+            borderRadius:5, padding:"5px 12px", fontSize:13, fontWeight:600, cursor:"pointer",
+            transition:"background 0.12s" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.12)")}
+            onMouseLeave={e=>(e.currentTarget.style.background="rgba(255,255,255,0.0)")}>
+            <Users size={13}/>
+            <span>Share</span>
+            <span style={{ background:"rgba(255,255,255,0.22)", borderRadius:10,
+              padding:"1px 6px", fontSize:11, fontWeight:700 }}>1</span>
+          </button>
+          <button style={{ padding:"5px 6px", background:"none", border:"none", cursor:"pointer",
+            color:"rgba(255,255,255,0.65)", borderRadius:4, display:"flex" }}>
+            <MoreHorizontal size={15}/>
+          </button>
         </div>
       </div>
 
-      {/* Lists */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden px-3 py-3">
-        <div className="flex gap-2.5 h-full items-start">
-          {lists.map(list => <BoardList key={list.id} list={list} onAddCard={onAddCard} narrow={narrow} />)}
-          <button className={`${narrow?"w-[240px] min-w-[240px]":"w-[272px] min-w-[272px]"} bg-white/10 hover:bg-white/15 rounded-xl p-3 flex items-center gap-2 text-white/80 hover:text-white transition-colors h-fit flex-shrink-0`}>
-            <Plus className="w-[14px] h-[14px]" />
-            <span className="text-[13px] font-medium">Add another list</span>
+      {/* ── Lists ── */}
+      <div style={{ flex:1, overflowX:"auto", overflowY:"hidden",
+        padding:"12px 12px 0", display:"flex" }}>
+        <div style={{ display:"flex", gap:10, alignItems:"flex-start", height:"100%" }}>
+          {lists.map(list=>(
+            <BoardList key={list.id} list={list} onAddCard={onAddCard}/>
+          ))}
+          {/* Add another list */}
+          <button style={{ width:272, minWidth:272, background:"rgba(255,255,255,0.14)",
+            border:"none", borderRadius:12, padding:"10px 12px",
+            display:"flex", alignItems:"center", gap:8, color:"rgba(255,255,255,0.85)",
+            cursor:"pointer", fontSize:13, fontWeight:500, flexShrink:0,
+            transition:"background 0.12s", height:"fit-content" }}
+            onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.22)")}
+            onMouseLeave={e=>(e.currentTarget.style.background="rgba(255,255,255,0.14)")}>
+            <Plus size={14}/> Add another list
           </button>
         </div>
       </div>
+
       {/* Scrollbar track */}
-      <div className="h-3 bg-black/10 border-t border-white/5 flex-shrink-0" />
+      <div style={{ height:12, background:"rgba(0,0,0,0.15)",
+        borderTop:"1px solid rgba(255,255,255,0.05)", flexShrink:0 }}>
+        <div style={{ height:"100%", width:"22%", marginLeft:"4%",
+          background:"rgba(255,255,255,0.28)", borderRadius:6 }}/>
+      </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bottom Navigation
-// ─────────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────
+   BOTTOM NAV BAR
+   Screenshot: all 3 tabs active (blue filled + underline),
+   "Switch boards" has purple border
+───────────────────────────────────────────────────────── */
 function BottomNav({ active, onToggle, onSwitch }: {
-  active: Set<PanelKey>;
-  onToggle: (k: PanelKey) => void;
-  onSwitch: () => void;
+  active:Set<Panel>; onToggle:(k:Panel)=>void; onSwitch:()=>void;
 }) {
-  const tabs: { key: PanelKey; label: string; Icon: React.ElementType }[] = [
-    { key:"inbox",   label:"Inbox",   Icon:Inbox },
-    { key:"planner", label:"Planner", Icon:Calendar },
-    { key:"board",   label:"Board",   Icon:LayoutDashboard },
+  const TABS: {key:Panel; label:string; Icon:React.ElementType}[] = [
+    {key:"inbox",   label:"Inbox",   Icon:Inbox},
+    {key:"planner", label:"Planner", Icon:Calendar},
+    {key:"board",   label:"Board",   Icon:LayoutDashboard},
   ];
 
   return (
-    <div className="flex-shrink-0 flex items-center justify-center py-[10px]">
-      {/* Pill container — dark background, rounded, bordered */}
-      <div className="flex items-center rounded-[18px] border border-[#3d4c5c]/80 shadow-2xl px-1 py-1 gap-0.5"
-        style={{ background:"#1d2125" }}>
-        {tabs.map(({ key, label, Icon }) => {
-          const isActive = active.has(key);
+    <div style={{ flexShrink:0, display:"flex", justifyContent:"center", padding:"8px 0 10px",
+      background:"transparent" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:2,
+        background:"#1d2125", border:`1px solid rgba(61,76,92,0.75)`,
+        borderRadius:20, padding:"4px 5px", boxShadow:"0 4px 24px rgba(0,0,0,0.55)" }}>
+
+        {TABS.map(({key,label,Icon})=>{
+          const on = active.has(key);
           return (
-            <button key={key} onClick={() => onToggle(key)}
-              className={`relative flex items-center gap-[7px] px-[18px] py-[9px] rounded-[14px] text-[13px] font-medium transition-all duration-150 select-none ${
-                isActive
-                  // Active: blue filled button
-                  ? "bg-[#1d6ebf] text-white shadow-sm"
-                  // Inactive: transparent, muted text
-                  : "text-[#9fadbc] hover:text-[#b6c2cf] hover:bg-white/5"
-              }`}>
-              <Icon className="w-[15px] h-[15px]" />
+            <button key={key} onClick={()=>onToggle(key)}
+              style={{ position:"relative", display:"flex", alignItems:"center", gap:7,
+                padding:"8px 18px", borderRadius:16, border:"none", cursor:"pointer",
+                fontSize:13, fontWeight:500, transition:"all 0.15s",
+                background: on ? "#1a5fa5" : "transparent",
+                color: on ? "white" : T.muted }}
+              onMouseEnter={e=>{ if(!on)(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.07)"; }}
+              onMouseLeave={e=>{ if(!on)(e.currentTarget as HTMLElement).style.background="transparent"; }}>
+              <Icon size={15}/>
               <span>{label}</span>
-              {/* Blue underline for active */}
-              {isActive && (
-                <span className="absolute bottom-[-2px] left-1/2 -translate-x-1/2 h-[2.5px] w-5 bg-[#579dff] rounded-full" />
+              {/* bright underline when active */}
+              {on && (
+                <span style={{ position:"absolute", bottom:-1, left:"50%",
+                  transform:"translateX(-50%)", width:22, height:2.5,
+                  background:"#579dff", borderRadius:3 }}/>
               )}
             </button>
           );
         })}
 
-        {/* Switch boards — never active, always modal */}
+        {/* Switch boards — purple outline */}
         <button onClick={onSwitch}
-          className="flex items-center gap-[7px] px-[18px] py-[9px] rounded-[14px] text-[13px] font-medium text-[#9fadbc] hover:text-[#b6c2cf] hover:bg-white/5 transition-all duration-150 select-none">
-          <Grid3x3 className="w-[15px] h-[15px]" />
+          style={{ display:"flex", alignItems:"center", gap:7,
+            padding:"8px 18px", borderRadius:16, cursor:"pointer",
+            fontSize:13, fontWeight:500, transition:"all 0.15s",
+            background:"transparent", color:T.muted,
+            border:"2px solid hsl(272,55%,52%)" }}
+          onMouseEnter={e=>{
+            (e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.07)";
+            (e.currentTarget as HTMLElement).style.color=T.text;
+          }}
+          onMouseLeave={e=>{
+            (e.currentTarget as HTMLElement).style.background="transparent";
+            (e.currentTarget as HTMLElement).style.color=T.muted;
+          }}>
+          <Grid3x3 size={15}/>
           <span>Switch boards</span>
         </button>
       </div>
@@ -585,120 +696,104 @@ function BottomNav({ active, onToggle, onSwitch }: {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page Root
-// ─────────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────
+   PAGE ROOT
+───────────────────────────────────────────────────────── */
 export default function BoardPage() {
-  const [active, setActive] = useState<Set<PanelKey>>(new Set<PanelKey>(["board"]));
+  /* ── Default: ALL THREE panels open — exactly matches screenshot ── */
+  const [active, setActive] = useState<Set<Panel>>(
+    new Set<Panel>(["inbox","planner","board"])
+  );
   const [showSwitcher, setShowSwitcher] = useState(false);
 
-  const [lists, setLists] = useState<List[]>([
-    { id:"1", title:"To Do",  cards:[{ id:"c1", title:"Going to pick up a student from his school as a result of mid term break" }] },
-    { id:"2", title:"Doing",  cards:[] },
-    { id:"3", title:"Done",   cards:[] },
+  /* Inbox cards (pre-populated from screenshot) */
+  const [inboxCards, setInboxCards] = useState([
+    { id:"ic1", title:"This is a little to do" },
+    { id:"ic2", title:"To understand trello" },
   ]);
 
-  const addCard = (listId: string, title: string) => {
-    setLists(prev => prev.map(l => l.id===listId ? { ...l, cards:[...l.cards,{ id:Date.now().toString(), title }] } : l));
-  };
+  /* Board lists — "Doing" and "Done" as in screenshot */
+  const [lists, setLists] = useState<List[]>([
+    { id:"doing", title:"Doing", cards:[] },
+    { id:"done",  title:"Done",  cards:[] },
+  ]);
 
-  const toggle = (key: PanelKey) => {
-    setActive(prev => {
+  const addCard = useCallback((listId:string, title:string) => {
+    setLists(prev=>prev.map(l=>l.id===listId
+      ? {...l, cards:[...l.cards,{id:Date.now().toString(),title}]}
+      : l));
+  },[]);
+
+  const addInboxCard = useCallback((t:string) => {
+    setInboxCards(prev=>[{id:Date.now().toString(),title:t},...prev]);
+  },[]);
+
+  const toggle = useCallback((key:Panel) => {
+    setActive(prev=>{
       const next = new Set(prev);
       if (next.has(key)) {
-        if (next.size===1) return next; // keep at least one
+        if (next.size===1) return prev; // at least one stays open
         next.delete(key);
       } else {
         next.add(key);
       }
       return next;
     });
-  };
+  },[]);
 
   const showInbox   = active.has("inbox");
   const showPlanner = active.has("planner");
   const showBoard   = active.has("board");
 
-  // True when inbox is the ONLY open panel → full-page inbox mode
-  const inboxOnly   = showInbox && !showPlanner && !showBoard;
-  // True when planner is open WITHOUT board → full 7-day planner
-  const plannerFull = showPlanner && !showBoard;
-  // True when planner AND board both open → compact single-day planner
-  const plannerCompact = showPlanner && showBoard;
-  // Three panels
-  const allThree = showInbox && showPlanner && showBoard;
-
-  // ── Page background ──
-  // When only board is visible → board gradient
-  // When only inbox is visible → dark navy
-  // When only planner (or inbox+planner) → dark #1d2125
-  // Mixed with board → board gradient wraps everything
-  const pageBg = showBoard
-    ? "linear-gradient(135deg,#0052b8 0%,#0068cc 45%,#0090b8 100%)"
-    : showPlanner
-      ? "#1d2125"
-      : "linear-gradient(180deg,#1a2540 0%,#1c2a4a 100%)";
-
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: pageBg }}>
+    <div style={{ height:"100vh", display:"flex", flexDirection:"column",
+      overflow:"hidden", background:T.boardGrad }}>
 
-      {/* ── Top Navbar ── */}
-      <header className="flex-shrink-0 flex items-center gap-3 px-3 py-[7px] z-30"
-        style={{ background:"rgba(29,33,37,0.55)", backdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button className="p-[7px] hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors">
-            <Grid3x3 className="w-[17px] h-[17px]" />
-          </button>
-          <TrelloLogo />
+      {/* ══ TOP NAVBAR ══ */}
+      <header style={{ flexShrink:0, display:"flex", alignItems:"center", gap:10,
+        padding:"6px 12px", zIndex:30,
+        background:T.nav, backdropFilter:"blur(14px)",
+        borderBottom:`1px solid ${T.navBorder}` }}>
+
+        {/* Left: apps grid + logo */}
+        <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
+          <IconBtn><Grid3x3 size={17}/></IconBtn>
+          <Logo/>
         </div>
-        <div className="flex-1 flex justify-center px-2"><SearchBar /></div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button className="bg-[#579dff] hover:bg-[#85b8ff] text-[#1d2125] font-bold text-[13px] px-3 py-[7px] rounded-[4px] transition-colors mr-0.5">Create</button>
-          <button className="p-[7px] hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors"><Bell className="w-[17px] h-[17px]" /></button>
-          <button className="p-[7px] hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors"><HelpCircle className="w-[17px] h-[17px]" /></button>
-          <Avatar />
+
+        {/* Center: search */}
+        <div style={{ flex:1, display:"flex", justifyContent:"center", padding:"0 10px" }}>
+          <SearchBar/>
+        </div>
+
+        {/* Right: Create + icons */}
+        <div style={{ display:"flex", alignItems:"center", gap:3, flexShrink:0 }}>
+          <button style={{ background:"#579dff", color:"#1d2125", border:"none",
+            borderRadius:4, padding:"7px 14px", fontSize:13, fontWeight:700, cursor:"pointer",
+            transition:"background 0.12s", marginRight:4 }}
+            onMouseEnter={e=>(e.currentTarget.style.background="#85b8ff")}
+            onMouseLeave={e=>(e.currentTarget.style.background="#579dff")}>
+            Create
+          </button>
+          <IconBtn><MessageSquare size={17}/></IconBtn>
+          <IconBtn badge={1}><Bell size={17}/></IconBtn>
+          <IconBtn><HelpCircle size={17}/></IconBtn>
+          <Av size={32}/>
         </div>
       </header>
 
-      {/* ── Panel Area ──
-          Layout matrix:
-          ┌─────────────────────────────────────────────────┐
-          │ inbox only     │ full-page InboxFullPage        │
-          │ planner only   │ full-page PlannerFullPage      │
-          │ board only     │ full-page BoardPanel           │
-          │ inbox+board    │ InboxSidebar | BoardPanel      │
-          │ inbox+planner  │ InboxSidebar | PlannerFullPage │
-          │ planner+board  │ PlannerCompact | BoardPanel    │
-          │ all three      │ InboxSidebar | PlannerCompact | BoardPanel │
-          └─────────────────────────────────────────────────┘
-      */}
-      <div className="flex-1 flex overflow-hidden">
-
-        {/* INBOX */}
-        {inboxOnly  && <InboxFullPage />}
-        {showInbox && !inboxOnly && <InboxSidebar />}
-
-        {/* PLANNER */}
-        {plannerFull    && <PlannerFullPage />}
-        {plannerCompact && <PlannerCompact />}
-
-        {/* BOARD */}
-        {showBoard && (
-          <BoardPanel
-            lists={lists}
-            onAddCard={addCard}
-            narrow={allThree}
-            standalone={showBoard && !showInbox && !showPlanner}
-          />
-        )}
-
+      {/* ══ PANELS ══ */}
+      <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
+        {showInbox   && <InboxPanel cards={inboxCards} onAdd={addInboxCard}/>}
+        {showPlanner && <PlannerPanel/>}
+        {showBoard   && <BoardArea  lists={lists} onAddCard={addCard}/>}
       </div>
 
-      {/* ── Bottom Nav ── */}
-      <BottomNav active={active} onToggle={toggle} onSwitch={() => setShowSwitcher(true)} />
+      {/* ══ BOTTOM NAV ══ */}
+      <BottomNav active={active} onToggle={toggle} onSwitch={()=>setShowSwitcher(true)}/>
 
-      {/* ── Board Switcher Modal ── */}
-      {showSwitcher && <BoardSwitcherModal onClose={() => setShowSwitcher(false)} />}
+      {/* ══ MODAL ══ */}
+      {showSwitcher && <SwitcherModal onClose={()=>setShowSwitcher(false)}/>}
     </div>
   );
 }
