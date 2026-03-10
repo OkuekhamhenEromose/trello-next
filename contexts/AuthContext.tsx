@@ -1,108 +1,112 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api, User, LoginCredentials } from '@/services/api';
+import React, {
+  createContext, useContext, useState,
+  useEffect, useCallback, ReactNode
+} from 'react';
+import { authService, User } from '@/services/authService';
 import { socketService } from '@/services/socket';
 
+/* ── Types ── */
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  error: string | null;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;
-  updateUser: (data: Partial<User>) => Promise<void>;
+  user:            User | null;
+  isLoading:       boolean;
+  error:           string | null;
   isAuthenticated: boolean;
+  loadUser:        () => Promise<void>;
+  logout:          () => Promise<void>;
+  updateUser:      (data: Partial<User>) => Promise<void>;
+  clearError:      () => void;
 }
 
+/* ── Context ── */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
+/* ── Provider ── */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user,      setUser]      = useState<User | null>(authService.getUser());
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
 
+  /* Subscribe to authService changes (login/logout from anywhere) */
   useEffect(() => {
-    const token = api.getToken();
+    const unsub = authService.subscribe(() => {
+      setUser(authService.getUser());
+    });
+    return unsub;
+  }, []);
+
+  /* On mount: if a token exists in localStorage, load the profile */
+  useEffect(() => {
+    const token = authService.getToken();
     if (token) {
-      loadUser();
+      loadUser().finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
     }
   }, []);
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
-      const response = await api.getProfile();
-      setUser(response.user);
-      socketService.connect(api.getToken() || undefined);
-    } catch (err) {
-      api.clearToken();
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+      const profile = await authService.loadProfile();
+      setUser(profile);
+      // Connect socket once user is confirmed
+      socketService.connect(authService.getToken() ?? undefined);
+    } catch {
+      // Token was invalid or expired — try refreshing
+      const refreshed = await authService.refreshAccessToken();
+      if (!refreshed) {
+        authService.clearToken();
+        setUser(null);
+      }
     }
-  };
+  }, []);
 
-  const login = async (credentials: LoginCredentials) => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
     try {
-      const response = await api.login(credentials);
-      setUser(response.user);
-      socketService.connect(response.token);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await api.logout();
-    } finally {
       socketService.disconnect();
+      await authService.logout();   // clears token + notifies subscribers
       setUser(null);
-      api.clearToken();
+    } catch (err: any) {
+      setError(err?.message ?? 'Logout failed');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const updateUser = async (data: Partial<User>) => {
+  const updateUser = useCallback(async (data: Partial<User>) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.updateProfile(data);
-      setUser(response.user);
+      const updated = await authService.updateProfile(data);
+      setUser(updated);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Update failed');
+      setError(err?.message ?? 'Update failed');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const value = {
-    user,
-    isLoading,
-    error,
-    login,
-    logout,
-    updateUser,
-    isAuthenticated: !!user,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      error,
+      isAuthenticated: !!user,
+      loadUser,
+      logout,
+      updateUser,
+      clearError: () => setError(null),
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
