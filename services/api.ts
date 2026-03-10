@@ -224,7 +224,6 @@ class ApiService {
   }
 
   // ============= AUTH ENDPOINTS =============
-  
   async startRegistration(email: string): Promise<{ message: string; email: string; token: string; expiresAt: string }> {
     return this.request({
       method: 'POST',

@@ -574,7 +574,7 @@ function EmailStep({ form, setForm, errors, loading, onContinue }: EmailStepProp
           Can&apos;t log in?
         </Link>
         <span style={{ color: "#7A869A" }}>•</span>
-        <Link href="/register" style={{ color: "#0052CC", textDecoration: "none" }}
+        <Link href="/setup-account" style={{ color: "#0052CC", textDecoration: "none" }}
           onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
           onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
           Create an account

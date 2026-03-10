@@ -5,7 +5,9 @@ import {
   Search, Plus, Bell, HelpCircle, MoreHorizontal, Users, X,
   Inbox, Calendar, LayoutDashboard, Grid3x3, Mail, Smartphone,
   Lock, ChevronDown, SlidersHorizontal, AlignJustify, ChevronUp,
-  MessageSquare, Aperture, Star,
+  MessageSquare, Aperture, Star, ChevronRight, LogOut,
+  UserCircle2, Activity, CreditCard, Settings2, Palette,
+  PlusCircle, ExternalLink, ArrowLeftRight,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────
@@ -65,13 +67,196 @@ function Logo() {
 /* ─────────────────────────────────────────────────────────
    AVATAR
 ───────────────────────────────────────────────────────── */
-function Av({ size=32, bg="linear-gradient(135deg,#eb5a46,#c9372c)", initials="EC" }:
-  { size?:number; bg?:string; initials?:string }) {
+function Av({ size=32, bg="linear-gradient(135deg,#eb5a46,#c9372c)", initials="EC", onClick }:
+  { size?:number; bg?:string; initials?:string; onClick?:()=>void }) {
+  const [hov, setHov] = useState(false);
   return (
-    <div style={{ width:size, height:size, borderRadius:"50%", background:bg, flexShrink:0,
-      display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
-      color:"white", fontWeight:700, fontSize:size*0.38 }}>
+    <div
+      onClick={onClick}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        width:size, height:size, borderRadius:"50%", background:bg, flexShrink:0,
+        display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
+        color:"white", fontWeight:700, fontSize:size*0.38,
+        outline: hov ? "2px solid rgba(87,157,255,0.55)" : "2px solid transparent",
+        outlineOffset:2, transition:"outline 0.12s",
+      }}>
       {initials}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   PROFILE DROPDOWN
+   Matches screenshots exactly:
+   • ACCOUNT section — user row, Switch accounts, Manage account
+   • TRELLO section — menu items with icons
+   • Footer — Help, Shortcuts, Log out
+───────────────────────────────────────────────────────── */
+
+/** Single menu row */
+function PRow({
+  icon, label, sub, right, danger=false, onClick,
+}: {
+  icon?:React.ReactNode; label:string; sub?:string;
+  right?:React.ReactNode; danger?:boolean; onClick?:()=>void;
+}) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        width:"100%", display:"flex", alignItems:"center", gap:10,
+        padding:"9px 16px", background:hov?"rgba(255,255,255,0.07)":"transparent",
+        border:"none", cursor:"pointer", textAlign:"left",
+        transition:"background 0.1s",
+      }}>
+      {icon && (
+        <span style={{ color: danger ? "#ef5c48" : T.muted, flexShrink:0, display:"flex" }}>
+          {icon}
+        </span>
+      )}
+      <span style={{ flex:1 }}>
+        <span style={{ display:"block", fontSize:14, color: danger?"#ef5c48":T.text, lineHeight:1.35 }}>
+          {label}
+        </span>
+        {sub && <span style={{ fontSize:12, color:T.muted, lineHeight:1.3 }}>{sub}</span>}
+      </span>
+      {right && <span style={{ color:T.muted, display:"flex", flexShrink:0 }}>{right}</span>}
+    </button>
+  );
+}
+
+/** Section label */
+function PSect({ label }:{ label:string }) {
+  return (
+    <div style={{ padding:"10px 16px 4px",
+      fontSize:11, fontWeight:700, letterSpacing:"0.07em",
+      color:T.muted, textTransform:"uppercase" }}>
+      {label}
+    </div>
+  );
+}
+
+/** Thin divider */
+function PDivider() {
+  return <div style={{ height:1, background:"rgba(61,76,92,0.45)", margin:"4px 0" }}/>;
+}
+
+interface ProfileDropdownProps {
+  name:    string;
+  email:   string;
+  initials:string;
+  onClose: ()=>void;
+}
+
+function ProfileDropdown({ name, email, initials, onClose }: ProfileDropdownProps) {
+  /* Close on outside click */
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    const handler = (e:MouseEvent)=>{
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    /* slight delay so the triggering click doesn't immediately close */
+    const t = setTimeout(()=>document.addEventListener("mousedown", handler), 50);
+    return ()=>{ clearTimeout(t); document.removeEventListener("mousedown", handler); };
+  },[onClose]);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position:"fixed",
+        top:50,           /* just below the 44px navbar */
+        right:8,
+        width:280,
+        zIndex:9999,
+        background:"#282e33",
+        border:`1px solid rgba(61,76,92,0.7)`,
+        borderRadius:10,
+        boxShadow:"0 12px 40px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4)",
+        overflow:"hidden",
+        animation:"dropIn 0.15s cubic-bezier(.22,.61,.36,1)",
+      }}>
+      <style>{`
+        @keyframes dropIn {
+          from { opacity:0; transform:translateY(-8px) scale(0.97); }
+          to   { opacity:1; transform:translateY(0)   scale(1);    }
+        }
+      `}</style>
+
+      {/* ── ACCOUNT section ── */}
+      <PSect label="Account"/>
+
+      {/* User identity row */}
+      <div style={{ display:"flex", alignItems:"center", gap:12, padding:"6px 16px 10px" }}>
+        <div style={{
+          width:40, height:40, borderRadius:"50%", flexShrink:0,
+          background:"linear-gradient(135deg,#eb5a46,#c9372c)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          color:"white", fontWeight:700, fontSize:15,
+        }}>
+          {initials}
+        </div>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:"white",
+            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            {name}
+          </div>
+          <div style={{ fontSize:12, color:T.muted,
+            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            {email}
+          </div>
+        </div>
+      </div>
+
+      <PRow label="Switch accounts" icon={<ArrowLeftRight size={15}/>}/>
+      <PRow label="Manage account"  icon={<ExternalLink   size={15}/>}
+        right={<ExternalLink size={12}/>}/>
+
+      <PDivider/>
+
+      {/* ── TRELLO section ── */}
+      <PSect label="Trello"/>
+
+      <PRow label="Profile and visibility" icon={<UserCircle2  size={15}/>}/>
+      <PRow label="Activity"               icon={<Activity     size={15}/>}/>
+      <PRow label="Cards"                  icon={<CreditCard   size={15}/>}/>
+      <PRow label="Settings"               icon={<Settings2    size={15}/>}/>
+      <PRow label="Theme"                  icon={<Palette      size={15}/>}
+        right={<ChevronRight size={14}/>}/>
+
+      <PDivider/>
+
+      <PRow label="Create Workspace"
+        icon={
+          <span style={{ width:18, height:18, borderRadius:4, background:"rgba(87,157,255,0.2)",
+            display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <PlusCircle size={13} style={{ color:T.blue }}/>
+          </span>
+        }/>
+
+      <PDivider/>
+
+      <PRow label="Help"      icon={<HelpCircle size={15}/>}/>
+      <PRow label="Shortcuts" icon={
+        <span style={{ fontSize:11, fontFamily:"monospace", background:"rgba(255,255,255,0.1)",
+          borderRadius:3, padding:"1px 4px", color:T.muted }}>/</span>
+      }/>
+
+      <PDivider/>
+
+      <PRow label="Log out" icon={<LogOut size={15}/>} danger onClick={()=>{
+        onClose();
+        /* hook into authService.logout() or router.push('/login') here */
+        if (typeof window !== "undefined") window.location.href = "/login";
+      }}/>
+
+      {/* small bottom padding */}
+      <div style={{ height:6 }}/>
     </div>
   );
 }
@@ -705,6 +890,10 @@ export default function BoardPage() {
     new Set<Panel>(["inbox","planner","board"])
   );
   const [showSwitcher, setShowSwitcher] = useState(false);
+  const [showProfile,  setShowProfile]  = useState(false);
+
+  /* User info — swap with real data from useAuth() / authService in production */
+  const PROFILE = { name:"eromose charles", email:"charleschmidth@gmail.com", initials:"EC" };
 
   /* Inbox cards (pre-populated from screenshot) */
   const [inboxCards, setInboxCards] = useState([
@@ -778,7 +967,7 @@ export default function BoardPage() {
           <IconBtn><MessageSquare size={17}/></IconBtn>
           <IconBtn badge={1}><Bell size={17}/></IconBtn>
           <IconBtn><HelpCircle size={17}/></IconBtn>
-          <Av size={32}/>
+          <Av size={32} onClick={()=>setShowProfile(v=>!v)}/>
         </div>
       </header>
 
@@ -794,6 +983,16 @@ export default function BoardPage() {
 
       {/* ══ MODAL ══ */}
       {showSwitcher && <SwitcherModal onClose={()=>setShowSwitcher(false)}/>}
+
+      {/* ══ PROFILE DROPDOWN ══ */}
+      {showProfile && (
+        <ProfileDropdown
+          name={PROFILE.name}
+          email={PROFILE.email}
+          initials={PROFILE.initials}
+          onClose={()=>setShowProfile(false)}
+        />
+      )}
     </div>
   );
 }

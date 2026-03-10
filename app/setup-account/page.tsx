@@ -161,20 +161,30 @@ export default function SetupAccountPage() {
       console.error("Error headers:", err.response?.headers);
 
       // Show detailed error message
-      const errorMessage =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Account setup failed";
+  let errorMessage = err.response?.data?.error || 
+                     err.response?.data?.message ||
+                     err.message || 
+                     "Account setup failed";
 
       // If there are validation errors, show them too
-      if (err.response?.data?.errors) {
-        console.error("Validation errors:", err.response.data.errors);
-      }
-
-      setError(errorMessage);
+  if (err.response?.data?.errors) {
+    console.error("Validation errors:", err.response.data.errors);
+    // Log each validation error individually
+    err.response.data.errors.forEach((e: any, i: number) => {
+      console.error(`Validation error ${i + 1}:`, e);
+    });
+    
+    // Format validation errors for display
+    const validationMessages = err.response.data.errors.map((e: any) => e.msg || e.message).join(', ');
+    errorMessage = `${errorMessage}: ${validationMessages}`;
+    
+    // Set the error state with the validation messages
+    setError(errorMessage);
+  } else {
+    setError(errorMessage);
     }
   };
+}
 
   //   try {
   //   console.log("🔍 Completing registration for:", { email, fullName, token: token?.substring(0,8) + '...' });

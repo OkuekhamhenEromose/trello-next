@@ -13,7 +13,7 @@ export default function VerifyEmailPage() {
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<
-    "pending" | "verifying" | "success"
+    "pending" | "verifying" | "success" | "error"
   >("pending");
   const [error, setError] = useState("");
 
@@ -21,14 +21,17 @@ export default function VerifyEmailPage() {
     const emailParam = searchParams.get("email");
     const tokenParam = searchParams.get("token");
 
+    console.log("🔍 URL params:", { emailParam, tokenParam });
+
     if (tokenParam && emailParam) {
       setEmail(emailParam);
       setVerificationStatus("verifying");
       
       const verify = async () => {
         try {
-          // Call the actual verification API
+          console.log("🔍 Calling verifyEmail API...");
           const response = await api.verifyEmail(emailParam, undefined, tokenParam);
+          console.log("✅ Verify response:", response);
           
           if (response.verified) {
             setVerificationStatus("success");
@@ -38,24 +41,33 @@ export default function VerifyEmailPage() {
             sessionStorage.setItem("verificationEmail", emailParam);
             sessionStorage.setItem("verificationToken", tokenParam);
             
+            console.log("✅ Verification successful, redirecting in 2 seconds...");
+            
             // Redirect to setup account with token
             setTimeout(() => {
               router.push(`/setup-account?email=${emailParam}&token=${tokenParam}`);
             }, 2000);
           } else {
+            console.error("❌ Verification failed: response.verified is false");
             setError("Verification failed. Please try again.");
-            setVerificationStatus("pending");
+            setVerificationStatus("error");
           }
         } catch (err: any) {
+          console.error("❌ Verification error:", err);
+          console.error("Error response:", err.response?.data);
           setError(err.response?.data?.error || "Verification failed. Please try again.");
-          setVerificationStatus("pending");
+          setVerificationStatus("error");
         }
       };
       
       verify();
     } else {
       const storedEmail = sessionStorage.getItem("verificationEmail");
-      if (storedEmail) setEmail(storedEmail);
+      if (storedEmail) {
+        setEmail(storedEmail);
+      } else {
+        router.push("/signup");
+      }
     }
   }, [searchParams, router]);
 
@@ -91,6 +103,19 @@ export default function VerifyEmailPage() {
   const handleDifferentEmail = () => {
     sessionStorage.removeItem("verificationEmail");
     router.push("/signup");
+  };
+
+  const handleRetry = () => {
+    const emailParam = searchParams.get("email");
+    const tokenParam = searchParams.get("token");
+    if (emailParam && tokenParam) {
+      setVerificationStatus("verifying");
+      setError("");
+      // Trigger verification again
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
   };
 
   return (
@@ -152,6 +177,29 @@ export default function VerifyEmailPage() {
               <p className="text-sm" style={{ color: "hsl(215,15%,65%)" }}>
                 Redirecting you to complete your profile...
               </p>
+            </div>
+          ) : verificationStatus === "error" ? (
+            <div
+              className="rounded-xl p-10 text-center"
+              style={{ backgroundColor: "hsl(215,18%,20%)" }}
+            >
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-5">
+                <svg className="w-9 h-9 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">
+                Verification Failed
+              </h2>
+              <p className="text-sm mb-4" style={{ color: "hsl(215,15%,65%)" }}>
+                {error || "Could not verify your email. Please try again."}
+              </p>
+              <button
+                onClick={handleRetry}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           ) : (
             /* Main verification card */
