@@ -885,7 +885,7 @@ export default function LoginPage() {
     const oauthToken = searchParams.get("token");
     if (oauthToken) {
       localStorage.setItem("trello_token", oauthToken);
-      router.replace("/boards");
+      router.replace("/board");
     }
   }, []);
 

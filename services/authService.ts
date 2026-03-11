@@ -11,6 +11,8 @@
  *  - Password reset
  *  - User profile
  *  - Auth state subscription (simple pub/sub)
+ *  - Automatic token refresh with request queuing
+ *  - Logout from all devices
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
@@ -78,10 +80,73 @@ async function http<T>(
 
   if (!res.ok) {
     // Attach status + backend error fields for caller handling
-    throw Object.assign(new Error(data?.error ?? "Request failed"), { status: res.status, ...data });
+    throw Object.assign(new Error(data?.error ?? "Request failed"), { 
+      status: res.status, 
+      ...data 
+    });
   }
 
   return data as T;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOKEN REFRESH MANAGEMENT
+════════════════════════════════════════════════════════════ */
+
+// Singleton refresh promise to prevent multiple simultaneous refresh requests
+let refreshPromise: Promise<boolean> | null = null;
+
+/**
+ * Attempts to refresh the access token.
+ * Uses a singleton promise to prevent multiple simultaneous refresh requests.
+ */
+export async function refreshTokenIfNeeded(): Promise<boolean> {
+  // If already refreshing, return that promise
+  if (refreshPromise) return refreshPromise;
+  
+  refreshPromise = (async () => {
+    try {
+      const refreshed = await authService.refreshAccessToken();
+      return refreshed;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  
+  return refreshPromise;
+}
+
+/**
+ * HTTP helper with automatic token refresh on 401 responses.
+ * Use this for all authenticated API calls.
+ */
+export async function httpWithAuth<T>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  path: string,
+  body?: object
+): Promise<T> {
+  let token = authService.getToken();
+  
+  try {
+    return await http<T>(method, path, body, token);
+  } catch (error: any) {
+    // If 401 (Unauthorized), try to refresh token and retry once
+    if (error.status === 401) {
+      console.log('Token expired, attempting refresh...');
+      const refreshed = await refreshTokenIfNeeded();
+      
+      if (refreshed) {
+        console.log('Token refreshed successfully, retrying request...');
+        // Retry with new token
+        return await http<T>(method, path, body, authService.getToken());
+      } else {
+        console.log('Token refresh failed, clearing auth state...');
+        // Refresh failed, clear token and throw
+        authService.clearToken();
+      }
+    }
+    throw error;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -96,6 +161,18 @@ class AuthService {
   constructor() {
     if (typeof window !== "undefined") {
       this._token = localStorage.getItem(TOKEN_KEY);
+      
+      // If we have a token but no user, try to load profile on next tick
+      if (this._token && !this._user) {
+        setTimeout(() => {
+          this.loadProfile().catch(() => {
+            // If profile load fails, token might be invalid
+            this.refreshAccessToken().catch(() => {
+              this.clearToken();
+            });
+          });
+        }, 0);
+      }
     }
   }
 
@@ -223,13 +300,19 @@ class AuthService {
   async refreshAccessToken(): Promise<boolean> {
     try {
       const res = await http<{ accessToken: string; user: User }>(
-        "POST", "/auth/refresh-token"
+        "POST", "/auth/refresh-token", undefined, undefined // No token needed, uses cookie
       );
+      
       this.setToken(res.accessToken);
-      this._user = res.user;
+      this._user = {
+        ...res.user,
+        fullname: res.user.profile?.fullname ?? res.user.firstName,
+        profile_pix: res.user.profile?.avatar,
+      };
       this._notify();
       return true;
-    } catch {
+    } catch (error) {
+      console.error('Refresh token failed:', error);
       this.clearToken();
       return false;
     }
@@ -292,11 +375,29 @@ class AuthService {
      LOGOUT
   ══════════════════════════════════════════════════════════ */
 
+  /**
+   * POST /auth/logout
+   * Logs out from current device only.
+   */
   async logout(): Promise<void> {
     try {
       await http("POST", "/auth/logout", undefined, this._token);
     } catch {
       // ignore network errors — still clear local state
+    } finally {
+      this.clearToken();
+    }
+  }
+
+  /**
+   * POST /auth/logout-all
+   * Logs out from all devices by revoking all refresh tokens.
+   */
+  async logoutAll(): Promise<void> {
+    try {
+      await http("POST", "/auth/logout-all", undefined, this._token);
+    } catch {
+      // Ignore network errors
     } finally {
       this.clearToken();
     }
