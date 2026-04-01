@@ -5,7 +5,7 @@ import {
   Search, Plus, Bell, HelpCircle, MoreHorizontal, Users, X,
   Inbox, Calendar, LayoutDashboard, Grid3x3, Mail, Smartphone,
   Lock, ChevronDown, SlidersHorizontal, AlignJustify, ChevronUp,
-  MessageSquare, Aperture, Star, ChevronRight, LogOut,
+  MessageSquare, Aperture, ChevronRight, LogOut,
   UserCircle2, Activity, CreditCard, Settings2, Palette,
   PlusCircle, ExternalLink, ArrowLeftRight,
 } from "lucide-react";

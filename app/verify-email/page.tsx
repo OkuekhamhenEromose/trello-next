@@ -36,14 +36,12 @@ export default function VerifyEmailPage() {
           if (response.verified) {
             setVerificationStatus("success");
             
-            // Store verification data
             sessionStorage.setItem("emailVerified", "true");
             sessionStorage.setItem("verificationEmail", emailParam);
             sessionStorage.setItem("verificationToken", tokenParam);
             
             console.log("✅ Verification successful, redirecting in 2 seconds...");
             
-            // Redirect to setup account with token
             setTimeout(() => {
               router.push(`/setup-account?email=${emailParam}&token=${tokenParam}`);
             }, 2000);
@@ -52,10 +50,11 @@ export default function VerifyEmailPage() {
             setError("Verification failed. Please try again.");
             setVerificationStatus("error");
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error("❌ Verification error:", err);
-          console.error("Error response:", err.response?.data);
-          setError(err.response?.data?.error || "Verification failed. Please try again.");
+          const errorMessage = err instanceof Error ? err.message : "Verification failed. Please try again.";
+          const apiError = err as { response?: { data?: { error?: string } } };
+          setError(apiError.response?.data?.error || errorMessage);
           setVerificationStatus("error");
         }
       };
@@ -93,8 +92,9 @@ export default function VerifyEmailPage() {
       await api.startRegistration(email);
       setCanResend(false);
       setCountdown(60);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to resend verification email");
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { error?: string } } };
+      setError(apiError.response?.data?.error || "Failed to resend verification email");
     } finally {
       setResendLoading(false);
     }
@@ -111,7 +111,6 @@ export default function VerifyEmailPage() {
     if (emailParam && tokenParam) {
       setVerificationStatus("verifying");
       setError("");
-      // Trigger verification again
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -239,7 +238,7 @@ export default function VerifyEmailPage() {
                     lineHeight: "1.3",
                   }}
                 >
-                  Let's verify your email
+                  Let&apos;s verify your email
                 </h1>
 
                 <p
