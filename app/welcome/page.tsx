@@ -184,68 +184,68 @@ function InboxCard({ cards, style }: { cards: Array<{ text:string; hasIcons?:boo
   );
 }
 
-function BoardPanel({ todayCards=[], showDropZone=false }: { todayCards?: Array<{text:string;checked?:boolean;showCircle?:boolean}>; showDropZone?:boolean }) {
-  return (
-    <div style={{ flex:1,borderRadius:"16px 16px 0 0",overflow:"hidden",background:"linear-gradient(135deg,hsl(295,55%,50%) 0%,hsl(280,50%,45%) 40%,hsl(330,55%,50%) 100%)",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",minHeight:280 }}>
-      <div style={{ padding:"14px 20px 10px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
-        <span style={{ color:"white",fontWeight:700,fontSize:15 }}>My Trello Board</span>
-        <div style={{ display:"flex",gap:8,alignItems:"center" }}>
-          {[42,28,20].map((w,i)=><div key={i} style={{ width:w,height:8,borderRadius:4,backgroundColor:"rgba(255,255,255,0.2)" }}/>)}
-          <div style={{ width:24,height:24,borderRadius:6,backgroundColor:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <span style={{ color:"rgba(255,255,255,0.7)",fontSize:14 }}>⋯</span>
-          </div>
-        </div>
-      </div>
-      <div style={{ display:"flex",gap:12,padding:"0 14px 14px" }}>
-        {/* TODAY */}
-        <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
-            <span style={{ color:"white",fontSize:13,fontWeight:600 }}>Today</span>
-            <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
-          </div>
-          {todayCards.map((c,i) => (
-            <div key={i} style={{ backgroundColor:"hsl(215,14%,28%)",borderRadius:8,padding:"10px",marginBottom:8,border:c.showCircle?"2px solid rgba(255,255,255,0.35)":"2px solid transparent",display:"flex",alignItems:"center",gap:8 }}>
-              {c.showCircle && (c.checked ? <CheckCircle2 size={16} style={{ color:"#22c55e",flexShrink:0 }}/> : <Circle size={16} style={{ color:"rgba(255,255,255,0.45)",flexShrink:0 }}/>)}
-              <span style={{ color:c.checked?"rgba(255,255,255,0.38)":"rgba(255,255,255,0.78)",fontSize:12,textDecoration:c.checked?"line-through":"none",lineHeight:1.35 }}>{c.text}</span>
-            </div>
-          ))}
-          {showDropZone && todayCards.length===0 && (
-            <div style={{ border:"2px solid rgba(255,255,255,0.25)",borderRadius:8,height:80,backgroundColor:"rgba(255,255,255,0.06)",marginBottom:8 }}/>
-          )}
-          <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
-            <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
-            <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
-            <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
-          </div>
-        </div>
-        {/* THIS WEEK */}
-        <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
-            <span style={{ color:"white",fontSize:13,fontWeight:600 }}>This week</span>
-            <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
-          </div>
-          <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
-            <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
-            <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
-            <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
-          </div>
-        </div>
-        {/* LATER */}
-        <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
-            <span style={{ color:"white",fontSize:13,fontWeight:600 }}>Later</span>
-            <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
-          </div>
-          <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
-            <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
-            <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
-            <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// function BoardPanel({ todayCards=[], showDropZone=false }: { todayCards?: Array<{text:string;checked?:boolean;showCircle?:boolean}>; showDropZone?:boolean }) {
+//   return (
+//     <div style={{ flex:1,borderRadius:"16px 16px 0 0",overflow:"hidden",background:"linear-gradient(135deg,hsl(295,55%,50%) 0%,hsl(280,50%,45%) 40%,hsl(330,55%,50%) 100%)",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",minHeight:280 }}>
+//       <div style={{ padding:"14px 20px 10px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+//         <span style={{ color:"white",fontWeight:700,fontSize:15 }}>My Trello Board</span>
+//         <div style={{ display:"flex",gap:8,alignItems:"center" }}>
+//           {[42,28,20].map((w,i)=><div key={i} style={{ width:w,height:8,borderRadius:4,backgroundColor:"rgba(255,255,255,0.2)" }}/>)}
+//           <div style={{ width:24,height:24,borderRadius:6,backgroundColor:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+//             <span style={{ color:"rgba(255,255,255,0.7)",fontSize:14 }}>⋯</span>
+//           </div>
+//         </div>
+//       </div>
+//       <div style={{ display:"flex",gap:12,padding:"0 14px 14px" }}>
+//         {/* TODAY */}
+//         <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
+//           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+//             <span style={{ color:"white",fontSize:13,fontWeight:600 }}>Today</span>
+//             <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//           </div>
+//           {todayCards.map((c,i) => (
+//             <div key={i} style={{ backgroundColor:"hsl(215,14%,28%)",borderRadius:8,padding:"10px",marginBottom:8,border:c.showCircle?"2px solid rgba(255,255,255,0.35)":"2px solid transparent",display:"flex",alignItems:"center",gap:8 }}>
+//               {c.showCircle && (c.checked ? <CheckCircle2 size={16} style={{ color:"#22c55e",flexShrink:0 }}/> : <Circle size={16} style={{ color:"rgba(255,255,255,0.45)",flexShrink:0 }}/>)}
+//               <span style={{ color:c.checked?"rgba(255,255,255,0.38)":"rgba(255,255,255,0.78)",fontSize:12,textDecoration:c.checked?"line-through":"none",lineHeight:1.35 }}>{c.text}</span>
+//             </div>
+//           ))}
+//           {showDropZone && todayCards.length===0 && (
+//             <div style={{ border:"2px solid rgba(255,255,255,0.25)",borderRadius:8,height:80,backgroundColor:"rgba(255,255,255,0.06)",marginBottom:8 }}/>
+//           )}
+//           <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
+//             <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//             <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//             <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//           </div>
+//         </div>
+//         {/* THIS WEEK */}
+//         <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
+//           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+//             <span style={{ color:"white",fontSize:13,fontWeight:600 }}>This week</span>
+//             <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//           </div>
+//           <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
+//             <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//             <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//             <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//           </div>
+//         </div>
+//         {/* LATER */}
+//         <div style={{ flex:1,backgroundColor:"hsl(215,18%,20%)",borderRadius:12,padding:"12px 10px" }}>
+//           <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+//             <span style={{ color:"white",fontSize:13,fontWeight:600 }}>Later</span>
+//             <MoreHorizontal size={14} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//           </div>
+//           <div style={{ display:"flex",alignItems:"center",gap:4,marginTop:4 }}>
+//             <Plus size={12} style={{ color:"rgba(255,255,255,0.35)" }}/>
+//             <div style={{ flex:1,height:6,borderRadius:3,backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//             <div style={{ width:16,height:16,borderRadius:"50%",backgroundColor:"rgba(255,255,255,0.18)" }}/>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 function PageHeader({ step, onPrev, onNext, onClose }: { step:number; onPrev:()=>void; onNext:()=>void; onClose:()=>void }) {
   const active = pillFor(step);
@@ -282,27 +282,27 @@ function Btn({ onClick, label="Continue" }: { onClick:()=>void; label?:string })
 }
 
 /* Side inbox panel for stages 3-4 */
-function SideInbox({ cards }: { cards: Array<{text:string;hasIcons?:boolean}> }) {
-  return (
-    <div style={{ width:230,flexShrink:0,backgroundColor:"hsl(213,22%,16%)",borderRadius:"16px 0 0 0",padding:"20px 16px",alignSelf:"stretch" }}>
-      <div style={{ display:"flex",alignItems:"center",gap:9,marginBottom:16 }}>
-        <Inbox size={17} style={{ color:"rgba(255,255,255,0.55)" }}/>
-        <span style={{ color:"white",fontWeight:700,fontSize:14 }}>Inbox</span>
-      </div>
-      {cards.map((c,i)=>(
-        <div key={i} style={{ backgroundColor:"hsl(215,14%,26%)",borderRadius:9,padding:"10px 12px",marginBottom:8,cursor:"grab" }}>
-          <p style={{ color:"rgba(255,255,255,0.72)",fontSize:12.5,lineHeight:1.4 }}>{c.text}</p>
-          {c.hasIcons && (
-            <div style={{ display:"flex",gap:7,marginTop:7 }}>
-              <Mail size={12} style={{ color:"rgba(255,255,255,0.38)" }}/>
-              <AlignLeft size={12} style={{ color:"rgba(255,255,255,0.38)" }}/>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+// function SideInbox({ cards }: { cards: Array<{text:string;hasIcons?:boolean}> }) {
+//   return (
+//     <div style={{ width:230,flexShrink:0,backgroundColor:"hsl(213,22%,16%)",borderRadius:"16px 0 0 0",padding:"20px 16px",alignSelf:"stretch" }}>
+//       <div style={{ display:"flex",alignItems:"center",gap:9,marginBottom:16 }}>
+//         <Inbox size={17} style={{ color:"rgba(255,255,255,0.55)" }}/>
+//         <span style={{ color:"white",fontWeight:700,fontSize:14 }}>Inbox</span>
+//       </div>
+//       {cards.map((c,i)=>(
+//         <div key={i} style={{ backgroundColor:"hsl(215,14%,26%)",borderRadius:9,padding:"10px 12px",marginBottom:8,cursor:"grab" }}>
+//           <p style={{ color:"rgba(255,255,255,0.72)",fontSize:12.5,lineHeight:1.4 }}>{c.text}</p>
+//           {c.hasIcons && (
+//             <div style={{ display:"flex",gap:7,marginTop:7 }}>
+//               <Mail size={12} style={{ color:"rgba(255,255,255,0.38)" }}/>
+//               <AlignLeft size={12} style={{ color:"rgba(255,255,255,0.38)" }}/>
+//             </div>
+//           )}
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
 
 /* ════ MAIN ════ */
 export default function WelcomePage() {

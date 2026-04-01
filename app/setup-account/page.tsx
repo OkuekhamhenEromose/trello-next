@@ -150,39 +150,54 @@ export default function SetupAccountPage() {
       sessionStorage.removeItem("verificationEmail");
       sessionStorage.removeItem("verificationToken");
       sessionStorage.removeItem("emailVerified");
-
+      
       // Store token and redirect to welcome page
       localStorage.setItem("trello_token", response.token);
       router.push("/welcome");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ Registration error:", err);
-      console.error("Error response:", err.response?.data);
-      console.error("Error status:", err.response?.status);
-      console.error("Error headers:", err.response?.headers);
+      // Type guard to safely access response properties
+  const apiError = err as { 
+    response?: { 
+      data?: { 
+        error?: string; 
+        message?: string; 
+        errors?: Array<{ msg?: string; message?: string }>;
+      };
+      status?: number;
+      headers?: unknown;
+    };
+    message?: string;
+  };
+      console.error("Error response:", apiError.response?.data);
+  console.error("Error status:", apiError.response?.status);
+  console.error("Error headers:", apiError.response?.headers);
 
-      // Show detailed error message
-  let errorMessage = err.response?.data?.error || 
-                     err.response?.data?.message ||
-                     err.message || 
+  // Show detailed error message
+  let errorMessage = apiError.response?.data?.error || 
+                     apiError.response?.data?.message ||
+                     apiError.message || 
                      "Account setup failed";
 
-      // If there are validation errors, show them too
-  if (err.response?.data?.errors) {
-    console.error("Validation errors:", err.response.data.errors);
+     // If there are validation errors, show them too
+  if (apiError.response?.data?.errors) {
+    console.error("Validation errors:", apiError.response.data.errors);
     // Log each validation error individually
-    err.response.data.errors.forEach((e: any, i: number) => {
+    apiError.response.data.errors.forEach((e, i) => {
       console.error(`Validation error ${i + 1}:`, e);
     });
     
     // Format validation errors for display
-    const validationMessages = err.response.data.errors.map((e: any) => e.msg || e.message).join(', ');
+    const validationMessages = apiError.response.data.errors
+      .map((e) => e.msg || e.message)
+      .join(', ');
     errorMessage = `${errorMessage}: ${validationMessages}`;
     
     // Set the error state with the validation messages
     setError(errorMessage);
   } else {
     setError(errorMessage);
-    }
+  }
   };
 }
 
