@@ -743,20 +743,26 @@ interface TokenStepProps {
 }
 
 function TokenStep({
-  email, digits, setDigits, errors, loading,
-  onVerify, onResend, onBack,
+  email,
+  digits,
+  setDigits,
+  errors,
+  loading,
+  onVerify,
+  onResend,
+  onBack,
 }: TokenStepProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  // Moved focused state to component level (not inside map)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   const handleChange = (idx: number, val: string) => {
-    // only digits
     const v = val.replace(/\D/g, "").slice(-1);
     const next = [...digits];
     next[idx] = v;
     setDigits(next);
     if (v && idx < 5) inputRefs.current[idx + 1]?.focus();
-    // auto-submit when all filled
-    if (next.every(d => d !== "") && v) {
+    if (next.every((d) => d !== "") && v) {
       setTimeout(onVerify, 80);
     }
   };
@@ -765,7 +771,7 @@ function TokenStep({
     if (e.key === "Backspace" && !digits[idx] && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
     }
-    if (e.key === "Enter" && digits.every(d => d !== "")) onVerify();
+    if (e.key === "Enter" && digits.every((d) => d !== "")) onVerify();
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -780,77 +786,117 @@ function TokenStep({
 
   return (
     <>
-      {/* Big bold heading */}
-      <h1 style={{
-        fontSize: 24, fontWeight: 700, color: "#172B4D",
-        textAlign: "center", margin: "0 0 14px",
-        letterSpacing: "-0.3px",
-      }}>
+      <h1
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          color: "#172B4D",
+          textAlign: "center",
+          margin: "0 0 14px",
+          letterSpacing: "-0.3px",
+        }}
+      >
         We&apos;ve emailed you a code
       </h1>
 
-      <p style={{ fontSize: 14, color: "#5E6C84", textAlign: "center", lineHeight: 1.6, marginBottom: 6 }}>
+      <p
+        style={{
+          fontSize: 14,
+          color: "#5E6C84",
+          textAlign: "center",
+          lineHeight: 1.6,
+          marginBottom: 6,
+        }}
+      >
         We require additional verification to protect your account. Check your email to continue:
       </p>
-      <p style={{ fontSize: 14, fontWeight: 700, color: "#172B4D", textAlign: "center", marginBottom: 24 }}>
+      <p
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#172B4D",
+          textAlign: "center",
+          marginBottom: 24,
+        }}
+      >
         {email}
       </p>
 
-      {/* 6-box token input */}
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 24 }}
-        onPaste={handlePaste}>
-        {digits.map((d, i) => {
-          const [foc, setFoc] = useState(false);
-          return (
-            <input
-              key={i}
-              ref={el => { inputRefs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={d}
-              onChange={e => handleChange(i, e.target.value)}
-              onKeyDown={e => handleKeyDown(i, e)}
-              onFocus={() => setFoc(true)}
-              onBlur={() => setFoc(false)}
-              style={{
-                width: 48, height: 52,
-                textAlign: "center",
-                fontSize: 22, fontWeight: 600,
-                color: "#172B4D",
-                border: `2px solid ${foc ? "#2684FF" : "#DFE1E6"}`,
-                borderRadius: 4,
-                outline: "none",
-                background: "white",
-                transition: "border-color .12s",
-              }}
-            />
-          );
-        })}
+      <div
+        style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 24 }}
+        onPaste={handlePaste}
+      >
+        {digits.map((d, i) => (
+          <input
+            key={i}
+            ref={(el) => {
+              inputRefs.current[i] = el;
+            }}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={d}
+            onChange={(e) => handleChange(i, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            onFocus={() => setFocusedIndex(i)}
+            onBlur={() => setFocusedIndex(null)}
+            style={{
+              width: 48,
+              height: 52,
+              textAlign: "center",
+              fontSize: 22,
+              fontWeight: 600,
+              color: "#172B4D",
+              border: `2px solid ${focusedIndex === i ? "#2684FF" : "#DFE1E6"}`,
+              borderRadius: 4,
+              outline: "none",
+              background: "white",
+              transition: "border-color .12s",
+            }}
+          />
+        ))}
       </div>
 
       {errors.token && (
-        <p style={{ fontSize: 13, color: "#DE350B", textAlign: "center", marginBottom: 12 }}>{errors.token}</p>
+        <p style={{ fontSize: 13, color: "#DE350B", textAlign: "center", marginBottom: 12 }}>
+          {errors.token}
+        </p>
       )}
 
-      <PrimaryButton loading={loading} onClick={onVerify}>Verify</PrimaryButton>
+      <PrimaryButton loading={loading} onClick={onVerify}>
+        Verify
+      </PrimaryButton>
 
-      {/* helper links */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 20 }}>
         <button
-          type="button" onClick={onResend}
-          style={{ background: "none", border: "none", cursor: "pointer",
-            color: "#0052CC", fontSize: 14, textDecoration: "none" }}
-          onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-          onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
+          type="button"
+          onClick={onResend}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#0052CC",
+            fontSize: 14,
+            textDecoration: "none",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+        >
           Didn&apos;t receive an email? Resend email
         </button>
         <button
-          type="button" onClick={onBack}
-          style={{ background: "none", border: "none", cursor: "pointer",
-            color: "#0052CC", fontSize: 14 }}
-          onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-          onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
+          type="button"
+          onClick={onBack}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#0052CC",
+            fontSize: 14,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+        >
           Log in to a different account
         </button>
       </div>
@@ -887,7 +933,7 @@ export default function LoginPage() {
       localStorage.setItem("trello_token", oauthToken);
       router.replace("/board");
     }
-  }, []);
+  }, [searchParams, router]);
 
   /* ── Step 1: validate email & call /login/email ── */
   const handleEmailContinue = useCallback(async () => {
