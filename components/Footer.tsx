@@ -9,7 +9,14 @@ import {
   Youtube,
 } from "lucide-react";
 
-const footerLinks = [
+// Define proper types for footer links
+type FooterLink = {
+  title: string;
+  description: string;
+  href: "/about" | "/jobs" | "/apps" | "/contact";
+};
+
+const footerLinks: readonly FooterLink[] = [
   {
     title: "About Trello",
     description: "What&apos;s behind the boards.",
@@ -32,7 +39,13 @@ const footerLinks = [
   },
 ];
 
-const socialLinks = [
+// Define proper type for social links
+type SocialLink = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+};
+
+const socialLinks: readonly SocialLink[] = [
   { icon: Instagram, label: "Instagram" },
   { icon: Facebook, label: "Facebook" },
   { icon: Linkedin, label: "LinkedIn" },
@@ -75,7 +88,7 @@ export default function Footer() {
             <div key={link.title}>
               <h4 className="font-bold text-white mb-2">{link.title}</h4>
               <Link
-                href={link.href as any}
+                href={link.href}
                 className="text-sm text-white/70 hover:text-white transition-colors leading-relaxed"
               >
                 {link.description}
