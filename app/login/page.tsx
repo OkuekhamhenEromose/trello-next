@@ -1617,7 +1617,7 @@ export default function LoginPage() {
               </a>
               .
             </>
-          ) as any,
+          ),
           type: "warning",
         });
       } else {
