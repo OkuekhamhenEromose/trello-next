@@ -20,7 +20,7 @@ interface ErrorState {
   email?: string;
   password?: string;
   token?: string;
-  general?: string;
+  general?: React.ReactNode;
   type?: "warning" | "error"; // warning = yellow banner, error = red inline
 }
 
