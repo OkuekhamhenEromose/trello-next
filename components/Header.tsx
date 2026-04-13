@@ -54,6 +54,7 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
                   pathname === item.href
                     ? 'text-white'
@@ -72,10 +73,10 @@ export default function Header() {
             className="text-white hover:text-white hover:bg-white/10"
             asChild
           >
-            <Link href="/login">Log in</Link>
+            <Link href="/login" prefetch={false}>Log in</Link>
           </Button>
           <Button className="bg-primary hover:bg-trello-blue-light text-white font-medium" asChild>
-            <Link href="/signup">Get Trello for free</Link>
+            <Link href="/signup" prefetch={false}>Get Trello for free</Link>
           </Button>
         </div>
 
@@ -98,6 +99,7 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
+                prefetch={false}
                 className="flex items-center justify-between py-3 text-white/90 hover:text-white transition-colors"
                 onClick={closeMobileMenu}
               >
@@ -106,12 +108,12 @@ export default function Header() {
             ))}
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/10">
               <Button className="text-white justify-start bg-transparent hover:bg-white/10" asChild>
-                <Link href="/login" onClick={closeMobileMenu}>
+                <Link href="/login" prefetch={false} onClick={closeMobileMenu}>
                   Log in
                 </Link>
               </Button>
               <Button className="bg-primary hover:bg-trello-blue-light text-white" asChild>
-                <Link href="/signup" onClick={closeMobileMenu}>
+                <Link href="/signup" prefetch={false} onClick={closeMobileMenu}>
                   Get Trello for free
                 </Link>
               </Button>
