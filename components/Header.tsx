@@ -14,11 +14,11 @@ type NavItem = {
 }
 
 const navItems: readonly NavItem[] = [
-  { label: 'Features', hasDropdown: true, href: '/' },
-  { label: 'Solutions', hasDropdown: true, href: '/' },
-  { label: 'Plans', hasDropdown: true, href: '/' },
+  { label: 'Features', hasDropdown: false, href: '/' },
+  { label: 'Solutions', hasDropdown: false, href: '/' },
+  { label: 'Plans', hasDropdown: false, href: '/' },
   { label: 'Pricing', hasDropdown: false, href: '/' },
-  { label: 'Resources', hasDropdown: true, href: '/' },
+  { label: 'Resources', hasDropdown: false, href: '/' },
 ] as const
 
 export default function Header() {
@@ -54,16 +54,13 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`group flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
                   pathname === item.href
                     ? 'text-white'
                     : 'text-white/90 hover:text-white'
                 }`}
               >
                 {item.label}
-                {item.hasDropdown && (
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
-                )}
               </Link>
             ))}
           </nav>
@@ -95,7 +92,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-trello-navy border-t border-white/10 animate-in slide-in-from-top-4">
+        <div className="lg:hidden bg-trello-navy border-t border-white/10">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
@@ -105,7 +102,6 @@ export default function Header() {
                 onClick={closeMobileMenu}
               >
                 {item.label}
-                {item.hasDropdown && <ChevronDown className="h-4 w-4" />}
               </Link>
             ))}
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/10">
