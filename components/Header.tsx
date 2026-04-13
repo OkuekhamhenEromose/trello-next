@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button'
 type NavItem = {
   label: string
   hasDropdown: boolean
-  href: '/features' | '/solutions' | '/plans' | '/pricing' | '/resources'
+  href: string
 }
 
 const navItems: readonly NavItem[] = [
-  { label: 'Features', hasDropdown: true, href: '/features' },
-  { label: 'Solutions', hasDropdown: true, href: '/solutions' },
-  { label: 'Plans', hasDropdown: true, href: '/plans' },
-  { label: 'Pricing', hasDropdown: false, href: '/pricing' },
-  { label: 'Resources', hasDropdown: true, href: '/resources' },
+  { label: 'Features', hasDropdown: true, href: '/' },
+  { label: 'Solutions', hasDropdown: true, href: '/' },
+  { label: 'Plans', hasDropdown: true, href: '/' },
+  { label: 'Pricing', hasDropdown: false, href: '/' },
+  { label: 'Resources', hasDropdown: true, href: '/' },
 ] as const
 
 export default function Header() {
