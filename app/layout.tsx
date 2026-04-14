@@ -80,9 +80,6 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
   return (
     <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <body className={`${inter.className} antialiased`}>
-        <head>
-        <link rel="manifest" href="/manifest.json" />
-      </head>
         <AuthProvider>
         {children}
         </AuthProvider>
