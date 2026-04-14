@@ -608,25 +608,34 @@ export default function SignupPage() {
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    setError("");
-    try {
-      const response = await api.startRegistration(email);
-      sessionStorage.setItem("verificationEmail", email);
-      sessionStorage.setItem("verificationToken", response.token);
-      router.push("/verify-email");
-    } catch (err: unknown) {
-      const apiError = err as { response?: { data?: { error?: string } } };
-      setError(
-        apiError.response?.data?.error ||
-          "Failed to start registration. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  if (!email.trim()) return;
+  setLoading(true);
+  setError("");
+  
+  try {
+    // ✅ This response already includes the token
+    const response = await api.startRegistration(email);
+    
+    console.log('📧 Registration response:', response);
+    
+    // Store in sessionStorage as backup
+    sessionStorage.setItem("verificationEmail", email);
+    sessionStorage.setItem("verificationToken", response.token);
+    
+    // ✅ FIX: Pass both email and token in the URL
+    router.push(`/verify-email?email=${encodeURIComponent(email)}&token=${response.token}`);
+    
+  } catch (err: unknown) {
+    const apiError = err as { response?: { data?: { error?: string } } };
+    setError(
+      apiError.response?.data?.error ||
+        "Failed to start registration. Please try again.",
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     /*
