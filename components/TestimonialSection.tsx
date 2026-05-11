@@ -2,7 +2,6 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import Image from 'next/image'
 
 const testimonials = [
   {
@@ -10,8 +9,16 @@ const testimonials = [
       "Trello is so visual! It's the perfect way to see what's happening with work across our global offices at a glance.",
     author: 'Joey Rosenberg',
     role: 'Global Leadership Director at Women Who Code',
-    companyLogo: 'WOMEN WHO CODE.',
-    companyLogoText: true,
+    companyLogo: (
+      <span className="text-[#172b4d]" style={{ fontFamily: 'inherit' }}>
+        <span className="text-[11px] font-semibold tracking-widest uppercase leading-none block">
+          WOMEN WHO
+        </span>
+        <span className="text-[22px] font-black tracking-tight leading-none block">
+          CODE<span className="text-[14px] align-super">.</span>
+        </span>
+      </span>
+    ),
     stat: '68% of customers say Trello delivers value to their business within 30 days.',
   },
   {
@@ -19,19 +26,13 @@ const testimonials = [
       'Whether someone is in the office, working from home, or working on-site with a client, everyone can share context and information through Trello.',
     author: 'Sumeet Moghe',
     role: 'Product Manager at ThoughtWorks',
-    companyLogo: 'thoughtworks',
-    companyLogoText: true,
+    companyLogo: (
+      <span className="text-[#172b4d] text-[22px] font-bold tracking-[-0.5px]">
+        thoughtworks
+      </span>
+    ),
     stat: '81% of customers chose Trello for its ease of use.',
   },
-]
-
-const logos = [
-  { src: '/trello_visa.svg', alt: 'Visa', width: 960, height: 80 },
-  { src: '/trello_coinbase.svg', alt: 'Coinbase', width: 960, height: 80 },
-  { src: '/trello_johndierre.svg', alt: 'John Deere', width: 960, height: 80 },
-  { src: '/trello_zoom.svg', alt: 'Zoom', width: 960, height: 80 },
-  { src: '/trello_grandhyatt.svg', alt: 'Grand Hyatt', width: 960, height: 80 },
-  { src: '/trello_fender.svg', alt: 'Fender', width: 960, height: 80 },
 ]
 
 export default function TestimonialSection() {
@@ -45,102 +46,87 @@ export default function TestimonialSection() {
 
   return (
     <section className="py-20 lg:py-28 bg-white">
-      <div className="container mx-auto px-4 lg:px-8">
+      <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+        <div className="grid lg:grid-cols-5 gap-6 items-stretch">
 
-        {/* ── Testimonial cards ── */}
-        <div className="grid lg:grid-cols-5 gap-6 items-stretch mb-20">
+          {/* ── Quote card ── */}
+          <div className="lg:col-span-3 bg-white rounded-2xl p-8 lg:p-12 border border-[#dfe1e6] relative flex flex-col min-h-[360px]">
 
-          {/* Quote card */}
-          <div className="lg:col-span-3 bg-white rounded-2xl p-8 lg:p-12 border border-[#dfe1e6] relative flex flex-col">
-            {/* Nav: dots + arrows */}
-            <div className="absolute top-8 right-8 flex items-center gap-4">
-              <div className="flex gap-2">
+            {/* Navigation: dots + arrows — top right */}
+            <div className="absolute top-8 right-8 flex items-center gap-3">
+              {/* Dots */}
+              <div className="flex items-center gap-1.5">
                 {testimonials.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentIndex(i)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
+                    aria-label={`Go to testimonial ${i + 1}`}
+                    className={`h-2 rounded-full transition-all duration-300 focus:outline-none ${
                       i === currentIndex
                         ? 'w-8 bg-[#172b4d]'
-                        : 'w-2 bg-[#dfe1e6]'
+                        : 'w-2 bg-[#dfe1e6] hover:bg-[#b3bac5]'
                     }`}
                   />
                 ))}
               </div>
-              <div className="flex gap-2">
+
+              {/* Arrow buttons */}
+              <div className="flex gap-1.5">
                 <button
                   onClick={prev}
-                  className="w-10 h-10 rounded-full border border-[#dfe1e6] flex items-center justify-center hover:bg-[#f4f5f7] transition-colors"
+                  aria-label="Previous testimonial"
+                  className="w-9 h-9 rounded-full border border-[#dfe1e6] flex items-center justify-center hover:bg-[#f4f5f7] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0052cc]/30"
                 >
-                  <ChevronLeft className="w-5 h-5 text-[#172b4d]" />
+                  <ChevronLeft className="w-4 h-4 text-[#172b4d]" />
                 </button>
                 <button
                   onClick={next}
-                  className="w-10 h-10 rounded-full border border-[#dfe1e6] flex items-center justify-center hover:bg-[#f4f5f7] transition-colors"
+                  aria-label="Next testimonial"
+                  className="w-9 h-9 rounded-full border border-[#dfe1e6] flex items-center justify-center hover:bg-[#f4f5f7] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0052cc]/30"
                 >
-                  <ChevronRight className="w-5 h-5 text-[#172b4d]" />
+                  <ChevronRight className="w-4 h-4 text-[#172b4d]" />
                 </button>
               </div>
             </div>
 
-            <blockquote className="text-xl lg:text-2xl text-[#172b4d] leading-relaxed mt-10 lg:mt-4 flex-1">
+            {/* Quote text */}
+            <blockquote className="text-xl lg:text-[22px] text-[#172b4d] leading-[1.5] mt-10 lg:mt-6 flex-1 font-normal">
               &ldquo;{t.quote}&rdquo;
             </blockquote>
 
-            <div className="mt-8 pt-8 border-t border-[#dfe1e6] flex items-end justify-between">
-              <div>
-                <div className="w-16 h-px bg-[#172b4d] mb-4" />
-                <p className="font-bold text-[#172b4d]">{t.author}</p>
-                <p className="text-[#6b778c] text-sm mt-0.5">{t.role}</p>
-                <p className="text-xl font-bold text-[#172b4d] mt-4 tracking-tight">
-                  {t.companyLogo}
-                </p>
+            {/* Author footer */}
+            <div className="mt-8 pt-8 border-t border-[#dfe1e6] flex items-end justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                {/* Short horizontal rule */}
+                <div className="w-16 h-px bg-[#172b4d] mb-3" />
+                <p className="font-bold text-[#172b4d] text-[15px] leading-snug">{t.author}</p>
+                <p className="text-[#6b778c] text-[13px] leading-snug mt-0.5">{t.role}</p>
+                <div className="mt-3">{t.companyLogo}</div>
               </div>
+
               <a
                 href="#"
-                className="text-[#0052cc] font-medium hover:underline text-sm shrink-0 mb-1"
+                className="text-[#0052cc] font-medium hover:underline text-[13px] shrink-0 mb-0.5 whitespace-nowrap"
               >
                 Read the story
               </a>
             </div>
           </div>
 
-          {/* Stat card */}
+          {/* ── Stat card ── */}
           <div className="lg:col-span-2 bg-[#0052cc] rounded-2xl p-8 lg:p-12 flex flex-col justify-center">
-            <p className="text-2xl lg:text-3xl font-bold text-white leading-snug mb-6">
+            <p className="text-[26px] lg:text-[30px] font-bold text-white leading-[1.25] mb-6">
               {t.stat}
             </p>
-            <a href="#" className="text-white/80 hover:text-white underline font-medium text-sm">
+            <a
+              href="#"
+              className="text-white/75 hover:text-white underline underline-offset-2 font-medium text-[13px] transition-colors"
+            >
               Trello TechValidate Survey
             </a>
           </div>
+
         </div>
-
-        {/* ── Company logos ── */}
-        <div className="text-center">
-          <p className="text-lg text-[#172b4d] mb-10">
-            Join a community of millions of users globally who are using Trello to get more done.
-          </p>
-
-          <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-6 lg:gap-x-14">
-            {logos.map((logo) => (
-              <div
-                key={logo.alt}
-                className="opacity-70 hover:opacity-100 transition-opacity duration-200 flex items-center"
-              >
-                <Image
-                  src={logo.src}
-                  alt={logo.alt}
-                  width={logo.width}
-                  height={logo.height}
-                  // Each SVG is 960px wide — we constrain to a readable size
-                  className="h-7 lg:h-8 w-auto object-contain"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
     </section>
   )
