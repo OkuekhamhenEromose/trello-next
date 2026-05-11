@@ -2,11 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Turbopack — dramatically faster dev server (replaces Webpack in dev)
-  // This alone can cut your startup from 250s → under 10s
-  experimental: {
-    turbo: {},
-  },
+  // Fix: Move turbo from experimental to turbopack
+  turbopack: {},  // Changed from experimental.turbo
 
   // Allow CORS and API requests to backend
   async rewrites() {
