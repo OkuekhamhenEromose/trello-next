@@ -41,7 +41,7 @@ export default function HeroSection() {
         <div className="flex flex-col lg:flex-row lg:items-start">
 
           {/* ── LEFT CONTENT ── */}
-          <div className="animate-fade-in-up pt-16 lg:pt-24 pb-16 lg:pb-0 flex-shrink-0 w-full lg:w-[44%] xl:w-[42%] z-10">
+          <div className="animate-fade-in-up pt-16 lg:pt-24 pb-16 lg:pb-16 flex-shrink-0 w-full lg:w-[44%] xl:w-[42%] z-10">
             <h1
               className="font-extrabold text-[#172b4d] leading-[1.06] mb-5 tracking-tight"
               style={{ fontSize: "clamp(2rem, 3.6vw, 3.25rem)" }}
@@ -95,7 +95,7 @@ export default function HeroSection() {
             anchor to it. overflow-visible lets the phone bleed downward
             below the section fold, matching Trello's layout exactly.
           */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 ml-32">
 
             {/* Slash strokes — top-left, near the phone's upper-left edge */}
             <div className="absolute left-[6%] top-[6%] z-20 hidden lg:block pointer-events-none">
@@ -127,8 +127,8 @@ export default function HeroSection() {
               </svg>
             </div>
             <div
-              className="relative z-10"
-              style={{ width: "clamp(480px, 64vw, 760px)" }}
+              className="relative z-10 lg:ml-[-20px] mt-20"
+              style={{ width: "clamp(420px, 56vw, 680px)" }}
             >
               <Image
                 src="/mobilephone3.png"
@@ -147,7 +147,7 @@ export default function HeroSection() {
               visually to the right of the phone screen area.
               right-[10px] keeps them just inside the viewport.
             */}
-            <div className="hidden lg:block absolute right-[10px] top-[14%] z-30">
+            <div className="hidden lg:block absolute mt-24 right-[80px] top-[14%] z-30">
               {/* Teams — top-right */}
               <div
                 className="absolute top-0 right-0 w-[58px] h-[58px] bg-white rounded-2xl animate-float p-2.5"
