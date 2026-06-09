@@ -420,6 +420,7 @@ function PlannerPreview() {
         <DayHeader day="Thurs" date="24" />
         <DayHeader day="Fri" date="25" />
       </div>
+      <h2>TEST DEPLOYMENT 16c921c</h2>
 
       {/* Time grid */}
       <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-y-0 relative">
