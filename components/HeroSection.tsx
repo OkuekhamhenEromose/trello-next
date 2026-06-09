@@ -24,7 +24,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="bg-white overflow-x-hidden">
+    <section className="bg-white">
       {/* Announcement Banner */}
       <div className="bg-[#0052cc] py-3 text-center">
         <p className="text-sm text-white">
@@ -37,158 +37,214 @@ export default function HeroSection() {
       </div>
 
       {/* Hero Body */}
-      <div className="relative w-full max-w-[1280px] mx-auto px-6 lg:px-12 xl:px-16">
-        <div className="flex flex-col lg:flex-row lg:items-start">
-
-          {/* ── LEFT CONTENT ── */}
-          <div className="animate-fade-in-up pt-16 lg:pt-24 pb-16 lg:pb-16 flex-shrink-0 w-full lg:w-[44%] xl:w-[42%] z-10">
-            <h1
-              className="font-extrabold text-[#172b4d] leading-[1.06] mb-5 tracking-tight"
-              style={{ fontSize: "clamp(2rem, 3.6vw, 3.25rem)" }}
-            >
-              Capture, organize, and tackle your to-dos from anywhere.
-            </h1>
-            <p className="text-lg text-[#44546f] mb-8 leading-relaxed max-w-[460px]">
-              Escape the clutter and chaos—unleash your productivity with Trello.
-            </p>
-
-            {/* Email Signup */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-3 max-w-[520px]">
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setEmail(e.target.value)
-                }
-                className="h-12 bg-white border border-[#dfe1e6] rounded text-base flex-1 px-4"
-              />
-              <Button
-                onClick={handleSignUp}
-                className="h-12 px-6 bg-[#0052cc] hover:bg-[#0065ff] text-white font-semibold rounded whitespace-nowrap text-sm transition-colors"
+      <div className="overflow-x-hidden">
+        <div className="relative w-full max-w-[1280px] mx-auto px-6 lg:px-12 xl:px-16">
+          <div className="flex flex-col lg:flex-row lg:items-start">
+            {/* ── LEFT CONTENT ── */}
+            <div className="animate-fade-in-up pt-16 lg:pt-24 pb-16 lg:pb-16 flex-shrink-0 w-full lg:w-[44%] xl:w-[42%] z-10">
+              <h1
+                className="font-extrabold text-[#172b4d] leading-[1.06] mb-5 tracking-tight"
+                style={{ fontSize: "clamp(2rem, 3.6vw, 3.25rem)" }}
               >
-                Sign up - it&apos;s free!
-              </Button>
-            </div>
-            <p className="text-sm text-[#6b778c] mb-10">
-              By entering my email, I acknowledge the{" "}
-              <a href="#" className="text-[#0052cc] hover:underline">
-                Atlassian Privacy Policy
-              </a>
-            </p>
+                Capture, organize, and tackle your to-dos from anywhere.
+              </h1>
+              <p className="text-lg text-[#44546f] mb-8 leading-relaxed max-w-[460px]">
+                Escape the clutter and chaos—unleash your productivity with
+                Trello.
+              </p>
 
-            {/* Watch video */}
-            <a
-              href="#"
-              className="inline-flex items-center gap-3 text-[#0052cc] font-semibold text-sm hover:underline"
-            >
-              Watch video
-              <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-[#0052cc]">
-                <Play className="w-3 h-3 ml-0.5 fill-[#0052cc] text-[#0052cc]" />
-              </span>
-            </a>
-          </div>
-
-          {/* ── RIGHT CONTENT ── */}
-          {/*
-            This container is position:relative so all absolute children
-            anchor to it. overflow-visible lets the phone bleed downward
-            below the section fold, matching Trello's layout exactly.
-          */}
-          <div className="relative flex-1 ml-32">
-
-            {/* Slash strokes — top-left, near the phone's upper-left edge */}
-            <div className="absolute left-[6%] top-[6%] z-20 hidden lg:block pointer-events-none">
-              <svg width="48" height="44" viewBox="0 0 48 44" fill="none">
-                <line x1="42" y1="2"  x2="28" y2="24" stroke="#172b4d" strokeWidth="2.6" strokeLinecap="round" />
-                <line x1="30" y1="2"  x2="16" y2="24" stroke="#172b4d" strokeWidth="2.6" strokeLinecap="round" />
-                <line x1="18" y1="2"  x2="4"  y2="24" stroke="#172b4d" strokeWidth="2.6" strokeLinecap="round" />
-              </svg>
-            </div>
-
-            {/* Curved arrow — sits to the right of the floating icons */}
-            <div className="absolute right-[76px] top-[10%] z-20 hidden lg:block pointer-events-none">
-              <svg width="80" height="70" viewBox="0 0 80 70" fill="none">
-                <path
-                  d="M10 10 C40 6, 72 26, 64 58"
-                  stroke="#172b4d"
-                  strokeWidth="2.2"
-                  fill="none"
-                  strokeLinecap="round"
+              {/* Email Signup */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-3 max-w-[520px]">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setEmail(e.target.value)
+                  }
+                  className="h-12 bg-white border border-[#dfe1e6] rounded text-base flex-1 px-4"
                 />
-                <path
-                  d="M58 50 L64 60 L72 52"
-                  stroke="#172b4d"
-                  strokeWidth="2.2"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div
-              className="relative z-10 lg:ml-[-20px] mt-20"
-              style={{ width: "clamp(420px, 56vw, 680px)" }}
-            >
-              <Image
-                src="/mobilephone3.png"
-                alt="Trello app on mobile"
-                width={1800}
-                height={2200}
-                className="w-full h-auto object-contain object-bottom"
-                priority
-              />
-            </div>
-
-            {/*
-              FLOATING APP ICONS
-              ─────────────────────────────────────────────────────
-              Pinned to right edge, staggered vertically, sitting
-              visually to the right of the phone screen area.
-              right-[10px] keeps them just inside the viewport.
-            */}
-            <div className="hidden lg:block absolute mt-24 right-[80px] top-[14%] z-30">
-              {/* Teams — top-right */}
-              <div
-                className="absolute top-0 right-0 w-[58px] h-[58px] bg-white rounded-2xl animate-float p-2.5"
-                style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)", animationDelay: "0s" }}
-              >
-                <img src={teamsLogo} alt="Microsoft Teams" className="w-full h-full object-contain" />
+                <Button
+                  onClick={handleSignUp}
+                  className="h-12 px-6 bg-[#0052cc] hover:bg-[#0065ff] text-white font-semibold rounded whitespace-nowrap text-sm transition-colors"
+                >
+                  Sign up - it&apos;s free!
+                </Button>
               </div>
+              <p className="text-sm text-[#6b778c] mb-10">
+                By entering my email, I acknowledge the{" "}
+                <a href="#" className="text-[#0052cc] hover:underline">
+                  Atlassian Privacy Policy
+                </a>
+              </p>
 
-              {/* Swirl / Lasso — offset left */}
-              <div
-                className="absolute top-[60px] right-[48px] w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
-                style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)", animationDelay: "0.2s" }}
+              {/* Watch video */}
+              <a
+                href="#"
+                className="inline-flex items-center gap-3 text-[#0052cc] font-semibold text-sm hover:underline"
               >
-                <svg viewBox="0 0 40 40" className="w-full h-full">
-                  <circle cx="20" cy="20" r="14" fill="none" stroke="#FF7452" strokeWidth="5" />
-                  <circle cx="20" cy="20" r="8"  fill="none" stroke="#36B37E" strokeWidth="4" />
-                  <circle cx="20" cy="20" r="3"  fill="#0052cc" />
+                Watch video
+                <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-[#0052cc]">
+                  <Play className="w-3 h-3 ml-0.5 fill-[#0052cc] text-[#0052cc]" />
+                </span>
+              </a>
+            </div>
+
+            {/* ── RIGHT CONTENT ── */}
+            <div className="relative flex-1 ml-16 xl:ml-24">
+              {/* Slash strokes — top-left, near the phone's upper-left edge */}
+              <div className="absolute left-[6%] top-[6%] z-20 hidden lg:block pointer-events-none">
+                <svg width="48" height="44" viewBox="0 0 48 44" fill="none">
+                  <line
+                    x1="42"
+                    y1="2"
+                    x2="28"
+                    y2="24"
+                    stroke="#172b4d"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1="30"
+                    y1="2"
+                    x2="16"
+                    y2="24"
+                    stroke="#172b4d"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1="18"
+                    y1="2"
+                    x2="4"
+                    y2="24"
+                    stroke="#172b4d"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
 
-              {/* Slack — aligned right */}
+              {/* Phone image wrapper — constrained width so icons sit just outside it */}
               <div
-                className="absolute top-[118px] right-[2px] w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
-                style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)", animationDelay: "0.4s" }}
+                className="relative z-10 lg:ml-[-180px]"
+                style={{ width: "clamp(560px, 72vw, 900px)" }}
               >
-                <img src={slackLogo} alt="Slack" className="w-full h-full object-contain" />
-              </div>
+                <Image
+                  src="/mobilephone3.png"
+                  alt="Trello app on mobile"
+                  width={5400}
+                  height={6600}
+                  className="w-full h-auto object-contain object-bottom"
+                  priority
+                />
 
-              {/* Gmail — offset left */}
-              <div
-                className="absolute top-[176px] right-[48px] w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
-                style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)", animationDelay: "0.6s" }}
-              >
-                <img src={gmailLogo} alt="Gmail" className="w-full h-full object-contain" />
+                {/*
+      FLOATING APP ICONS
+      Anchored to the RIGHT edge of the phone image wrapper,
+      stacked vertically, matching Trello.com exactly.
+    */}
+                <div className="hidden lg:flex flex-col gap-3 absolute top-[22%] -right-[72px] z-30">
+                  {/* Curved arrow — pointing left toward the phone */}
+                  <div className="absolute -top-[56px] left-[50%] -translate-x-1/2 pointer-events-none">
+                    <svg width="70" height="56" viewBox="0 0 70 56" fill="none">
+                      <path
+                        d="M60 6 C30 2, 8 18, 16 48"
+                        stroke="#172b4d"
+                        strokeWidth="2.2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M10 40 L16 50 L24 42"
+                        stroke="#172b4d"
+                        strokeWidth="2.2"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Teams */}
+                  <div
+                    className="w-[58px] h-[58px] bg-white rounded-2xl animate-float p-2.5"
+                    style={{
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                      animationDelay: "0s",
+                    }}
+                  >
+                    <img
+                      src={teamsLogo}
+                      alt="Microsoft Teams"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Swirl / Lasso */}
+                  <div
+                    className="w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
+                    style={{
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                      animationDelay: "0.2s",
+                    }}
+                  >
+                    <svg viewBox="0 0 40 40" className="w-full h-full">
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="14"
+                        fill="none"
+                        stroke="#FF7452"
+                        strokeWidth="5"
+                      />
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="8"
+                        fill="none"
+                        stroke="#36B37E"
+                        strokeWidth="4"
+                      />
+                      <circle cx="20" cy="20" r="3" fill="#0052cc" />
+                    </svg>
+                  </div>
+
+                  {/* Slack */}
+                  <div
+                    className="w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
+                    style={{
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                      animationDelay: "0.4s",
+                    }}
+                  >
+                    <img
+                      src={slackLogo}
+                      alt="Slack"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Gmail */}
+                  <div
+                    className="w-[58px] h-[58px] bg-white rounded-[18px] p-2.5 animate-float"
+                    style={{
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                      animationDelay: "0.6s",
+                    }}
+                  >
+                    <img
+                      src={gmailLogo}
+                      alt="Gmail"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </section>
   );
 }
-
