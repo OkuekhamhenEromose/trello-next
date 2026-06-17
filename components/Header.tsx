@@ -34,18 +34,33 @@ export default function Header() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-trello-navy supports-[backdrop-filter]:bg-trello-navy/95 backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
+    <header className="w-full bg-white border-b border-[var(--color-border)]">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10 flex items-center justify-between h-20">
         {/* Logo */}
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-10">
           <Link href="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-white">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#0052CC">
-                <rect x="3" y="3" width="7" height="18" rx="1.5" />
-                <rect x="14" y="3" width="7" height="12" rx="1.5" />
-              </svg>
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold tracking-[0.18em] text-[var(--color-trello-navy)] uppercase">
+                Atlassian
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="24" height="24" rx="3" fill="#0052CC" />
+                  <rect x="3.5" y="3.5" width="7" height="13" rx="1" fill="white" />
+                  <rect x="13.5" y="3.5" width="7" height="9" rx="1" fill="white" />
+                </svg>
+                <span className="text-3xl font-extrabold text-[var(--color-trello-navy)] tracking-tight">
+                  Trello
+                </span>
+              </div>
             </div>
-            <span className="text-xl font-bold text-white">Trello</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -55,29 +70,29 @@ export default function Header() {
                 key={item.label}
                 href={item.href}
                 prefetch={false}
-                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
-                  pathname === item.href
-                    ? 'text-white'
-                    : 'text-white/90 hover:text-white'
-                }`}
+                className="flex items-center gap-1 px-4 py-2 text-[17px] font-medium text-[var(--color-trello-navy)] hover:text-[var(--color-primary)] transition-colors"
               >
                 {item.label}
+                {item.hasDropdown && <ChevronDown className="w-4 h-4" strokeWidth={2.5} />}
               </Link>
             ))}
           </nav>
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-4">
-          <Button
-            className="text-white hover:text-white hover:bg-white/10"
-            asChild
+        <div className="hidden lg:flex items-center gap-2">
+          <Link
+            href="/login"
+            className="px-5 py-3 text-[17px] font-medium text-[var(--color-trello-navy)] hover:text-[var(--color-primary)] transition-colors"
           >
-            <Link href="/login" prefetch={false}>Log in</Link>
-          </Button>
-          <Button className="bg-primary hover:bg-trello-blue-light text-white font-medium" asChild>
-            <Link href="/signup" prefetch={false}>Get Trello for free</Link>
-          </Button>
+            Log in
+          </Link>
+          <Link
+            href="/signup"
+            className="px-6 py-3 text-[17px] font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-trello-blue-light)] transition-colors rounded-sm"
+          >
+            Get Trello for free
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
