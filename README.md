@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trello Next
 
-## Getting Started
+A Next.js project inspired by Trello with a marketing landing page, user authentication flow, real-time board updates, and responsive UI components.
 
-First, run the development server:
+## Project overview
+
+This repository contains a custom Trello-style Next.js application built with the App Router. It includes:
+
+- Marketing landing page with feature sections and CTA.
+- Email-based login and registration flow.
+- Email verification and account setup pages.
+- Auth state management via `AuthContext` and client-side token storage.
+- Board UI with lists, cards, and navigation controls.
+- Real-time synchronization using `socket.io-client`.
+- API integration via Axios and custom service wrappers.
+- Tailwind CSS styling and Radix UI primitives.
+
+## Key routes
+
+- `/` - Home marketing page
+- `/login` - Login page with multi-step authentication
+- `/signup` - Registration start page
+- `/verify-email` - Email verification page
+- `/setup-account` - Complete account setup after verification
+- `/welcome` - Welcome page after signup
+- `/board` - Board/dashboard interface
+
+## Technologies
+
+- `next` 15
+- `react` 19
+- `typescript`
+- `tailwindcss`
+- `axios`
+- `socket.io-client`
+- `react-hook-form`
+- `@radix-ui/react-*`
+- `lucide-react`
+- `zod`
+- `@tanstack/react-query`
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create a `.env.local` file at the project root and add any backend URLs you need:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_WS_URL=http://localhost:5000
+```
+
+3. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` — start the Next.js development server
+- `npm run build` — build the production app
+- `npm run start` — start the production server after build
+- `npm run lint` — run ESLint
+- `npm run type-check` — run TypeScript type checking
 
-## Learn More
+## API and backend integration
 
-To learn more about Next.js, take a look at the following resources:
+The app expects a backend API at `NEXT_PUBLIC_API_URL` and proxies requests through `next.config.ts`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Default API endpoint: `http://localhost:5000/api`
+- Default socket URL: `http://localhost:5000`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The frontend uses `services/api.ts` and `services/authService.ts` to manage auth, profile, boards, lists, cards, and real-time socket events.
 
-## Deploy on Vercel
+## Auth flow
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The project includes client-side auth state and token management:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `contexts/AuthContext.tsx` manages user state and authentication lifecycle.
+- `services/authService.ts` handles login, verification, token storage, and refresh.
+- `services/socket.ts` connects a Socket.IO client once the user is authenticated.
+
+## Notes
+
+- The app is built with the App Router and server/client components.
+- `app/layout.tsx` wraps the app in `AuthProvider`.
+- `next.config.ts` includes rewrites for `/api/:path*` to the backend URL.
+- Remote images are allowed from `localhost` and `trellonode.onrender.com`.
+
+## Contributing
+
+If you want to extend this project, start by exploring:
+
+- `app/page.tsx` for the landing page layout
+- `app/board/page.tsx` for the board/dashboard UI
+- `services/api.ts` and `services/authService.ts` for backend integration
+- `contexts/AuthContext.tsx` for auth state management
+
+---
+
+Built with Next.js, Tailwind CSS, and Socket.IO for a modern Trello-inspired experience.
