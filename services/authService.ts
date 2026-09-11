@@ -15,7 +15,7 @@
  *  - Logout from all devices
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 const TOKEN_KEY = "trello_token";
 
 /* ════════════════════════════════════════════════════════════
@@ -60,7 +60,7 @@ type Listener = () => void;
    HTTP HELPER
 ════════════════════════════════════════════════════════════ */
 
-async function http<T>(
+export async function http<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   path: string,
   body?: object,
@@ -120,6 +120,15 @@ export async function refreshTokenIfNeeded(): Promise<boolean> {
  * HTTP helper with automatic token refresh on 401 responses.
  * Use this for all authenticated API calls.
  */
+export function getErrorMessage(error: unknown, fallback = 'Request failed'): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
 export async function httpWithAuth<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   path: string,
@@ -129,18 +138,19 @@ export async function httpWithAuth<T>(
   
   try {
     return await http<T>(method, path, body, token);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If 401 (Unauthorized), try to refresh token and retry once
-    if (error.status === 401) {
-      console.log('Token expired, attempting refresh...');
+    const status = typeof error === 'object' && error !== null && 'status' in error
+      ? (error as { status?: unknown }).status
+      : undefined;
+
+    if (status === 401) {
       const refreshed = await refreshTokenIfNeeded();
       
       if (refreshed) {
-        console.log('Token refreshed successfully, retrying request...');
         // Retry with new token
         return await http<T>(method, path, body, authService.getToken());
       } else {
-        console.log('Token refresh failed, clearing auth state...');
         // Refresh failed, clear token and throw
         authService.clearToken();
       }
@@ -161,18 +171,6 @@ class AuthService {
   constructor() {
     if (typeof window !== "undefined") {
       this._token = localStorage.getItem(TOKEN_KEY);
-      
-      // If we have a token but no user, try to load profile on next tick
-      if (this._token && !this._user) {
-        setTimeout(() => {
-          this.loadProfile().catch(() => {
-            // If profile load fails, token might be invalid
-            this.refreshAccessToken().catch(() => {
-              this.clearToken();
-            });
-          });
-        }, 0);
-      }
     }
   }
 
