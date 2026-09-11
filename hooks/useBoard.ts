@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/services/api';
+import { getErrorMessage } from '@/services/authService';
 import type { Board, List, Card } from '@/services/api';
 import { socketService } from '@/services/socket';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,8 +59,8 @@ export const useBoard = (boardId: string) => {
       const data = await api.getBoard(boardId);
       setBoard(data);
       socketService.joinBoard(boardId);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch board');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to fetch board'));
     } finally {
       setIsLoading(false);
     }
@@ -78,13 +79,14 @@ export const useBoard = (boardId: string) => {
   useEffect(() => {
     if (!boardId) return;
 
-    socketService.onBoardUpdated((updatedBoard: Board) => {
+    const cleanupListeners = [
+      socketService.onBoardUpdated((updatedBoard) => {
       if (updatedBoard._id === boardId) {
         setBoard((prev) => prev ? { ...prev, ...updatedBoard } : null);
       }
-    });
+      }),
 
-    socketService.onListCreated((newList: List) => {
+      socketService.onListCreated((newList) => {
       if (newList.board === boardId) {
         setBoard((prev) => {
           if (!prev) return null;
@@ -95,9 +97,9 @@ export const useBoard = (boardId: string) => {
           };
         });
       }
-    });
+      }),
 
-    socketService.onListUpdated((updatedList: List) => {
+      socketService.onListUpdated((updatedList) => {
       if (updatedList.board === boardId) {
         setBoard((prev) => {
           if (!prev) return null;
@@ -108,9 +110,9 @@ export const useBoard = (boardId: string) => {
           };
         });
       }
-    });
+      }),
 
-    socketService.onListDeleted(({ listId }) => {
+      socketService.onListDeleted(({ listId }) => {
       setBoard((prev) => {
         if (!prev) return null;
         return {
@@ -118,15 +120,15 @@ export const useBoard = (boardId: string) => {
           lists: prev.lists.filter((l) => l._id !== listId)
         };
       });
-    });
+      }),
 
-    socketService.onListsReordered((data) => {
+      socketService.onListsReordered((data) => {
       if (data.boardId === boardId) {
         fetchBoard();
       }
-    });
+      }),
 
-    socketService.onCardCreated((newCard: Card) => {
+      socketService.onCardCreated((newCard) => {
       setBoard((prev) => {
         if (!prev) return null;
         
@@ -145,9 +147,9 @@ export const useBoard = (boardId: string) => {
           )
         };
       });
-    });
+      }),
 
-    socketService.onCardUpdated((updatedCard: Card) => {
+      socketService.onCardUpdated((updatedCard) => {
       setBoard((prev) => {
         if (!prev) return null;
         
@@ -168,9 +170,9 @@ export const useBoard = (boardId: string) => {
           )
         };
       });
-    });
+      }),
 
-    socketService.onCardMoved(({ cardId, fromList, toList }) => {
+      socketService.onCardMoved(({ cardId, fromList, toList }) => {
       setBoard((prev) => {
         if (!prev) return null;
         
@@ -215,10 +217,11 @@ export const useBoard = (boardId: string) => {
 
         return { ...prev, lists: newLists };
       });
-    });
+      }),
 
+    ];
     return () => {
-      socketService.removeAllListeners();
+      cleanupListeners.forEach((cleanup) => cleanup());
     };
   }, [boardId, fetchBoard]);
 
@@ -239,8 +242,8 @@ export const useBoard = (boardId: string) => {
         };
       });
       return newList;
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create list');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to create list'));
       throw err;
     } finally {
       setIsLoading(false);
@@ -256,8 +259,8 @@ export const useBoard = (boardId: string) => {
         list: listId,
       });
       return newCard;
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create card');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to create card'));
       throw err;
     } finally {
       setIsLoading(false);
@@ -267,8 +270,8 @@ export const useBoard = (boardId: string) => {
   const moveCard = async (cardId: string, destinationListId: string, position?: number) => {
     try {
       await api.moveCard(cardId, destinationListId, position);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to move card');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to move card'));
       throw err;
     }
   };
@@ -280,8 +283,8 @@ export const useBoard = (boardId: string) => {
       const updatedBoard = await api.updateBoard(boardId, data);
       setBoard((prev) => prev ? { ...prev, ...updatedBoard } : null);
       return updatedBoard;
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update board');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to update board'));
       throw err;
     } finally {
       setIsLoading(false);

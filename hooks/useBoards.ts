@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/services/api';
+import { getErrorMessage } from '@/services/authService';
 import type { Board } from '@/services/api';
 import { socketService } from '@/services/socket';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,8 +21,8 @@ export const useBoards = () => {
     try {
       const data = await api.getBoards();
       setBoards(data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch boards');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to fetch boards'));
     } finally {
       setIsLoading(false);
     }
@@ -31,22 +32,22 @@ export const useBoards = () => {
     fetchBoards();
 
     // Socket listeners
-    socketService.onBoardCreated((board: Board) => {
+    const cleanupListeners = [
+      socketService.onBoardCreated((board) => {
       setBoards((prev) => [board, ...prev]);
-    });
-
-    socketService.onBoardUpdated((updatedBoard: Board) => {
+      }),
+      socketService.onBoardUpdated((updatedBoard) => {
       setBoards((prev) => prev.map((b) => 
         b._id === updatedBoard._id ? updatedBoard : b
       ));
-    });
-
-    socketService.onBoardArchived((archivedBoard: Board) => {
+      }),
+      socketService.onBoardArchived((archivedBoard) => {
       setBoards((prev) => prev.filter((b) => b._id !== archivedBoard._id));
-    });
+      }),
+    ];
 
     return () => {
-      socketService.removeAllListeners();
+      cleanupListeners.forEach((cleanup) => cleanup());
     };
   }, [fetchBoards]);
 
@@ -57,8 +58,8 @@ export const useBoards = () => {
       const newBoard = await api.createBoard(data);
       setBoards((prev) => [newBoard, ...prev]);
       return newBoard;
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create board');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to create board'));
       throw err;
     } finally {
       setIsLoading(false);
@@ -72,8 +73,8 @@ export const useBoards = () => {
       const updatedBoard = await api.updateBoard(id, data);
       setBoards((prev) => prev.map((b) => b._id === id ? updatedBoard : b));
       return updatedBoard;
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update board');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to update board'));
       throw err;
     } finally {
       setIsLoading(false);
@@ -86,8 +87,8 @@ export const useBoards = () => {
     try {
       await api.archiveBoard(id);
       setBoards((prev) => prev.filter((b) => b._id !== id));
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to archive board');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to archive board'));
       throw err;
     } finally {
       setIsLoading(false);
