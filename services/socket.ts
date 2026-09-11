@@ -1,47 +1,79 @@
-import { io } from 'socket.io-client';
-import type { Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
+import type { Board, Card, List } from '@/services/api';
+
+export type SocketEventMap = {
+  board_created: Board;
+  board_updated: Board;
+  board_archived: Board;
+  list_created: List;
+  list_updated: List;
+  list_deleted: { listId: string };
+  lists_reordered: { boardId: string; lists: string[] };
+  card_created: Card;
+  card_updated: Card;
+  card_moved: {
+    cardId: string;
+    fromList: string;
+    toList: string;
+  };
+  card_reordered: {
+    cardId: string;
+    listId: string;
+    position: number;
+  };
+  comment_created: unknown;
+  comment_deleted: {
+    commentId: string;
+  };
+};
+
+type ServerToClientEvents = {
+  [K in keyof SocketEventMap]: (payload: SocketEventMap[K]) => void;
+};
+
+type ClientToServerEvents = {
+  joinBoard: (boardId: string) => void;
+  leaveBoard: (boardId: string) => void;
+};
+
+type TrelloSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 class SocketService {
-  private socket: ReturnType<typeof io> | null = null;
+  private socket: TrelloSocket | null = null;
 
   connect(token?: string): void {
-    if (this.socket?.connected) return;
+    if (this.socket) {
+      this.socket.auth = token ? { token } : {};
 
-    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
-    
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+
+      return;
+    }
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
+
     this.socket = io(socketUrl, {
-      auth: token ? { token } : undefined,
+      auth: token ? { token } : {},
       transports: ['websocket'],
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-    });
-
-    this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket?.id);
-    });
-
-    this.socket.on('disconnect', (reason: string) => {
-      console.log('Socket disconnected:', reason);
-    });
-
-    this.socket.on('connect_error', (error: Error) => {
-      console.error('Socket connection error:', error);
-    });
+    }) as TrelloSocket;
   }
 
   disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    this.socket?.disconnect();
+    this.socket = null;
   }
 
-  getSocket(): ReturnType<typeof io> | null {
+  getSocket(): TrelloSocket | null {
     return this.socket;
   }
 
-  // Board rooms
   joinBoard(boardId: string): void {
     this.socket?.emit('joinBoard', boardId);
   }
@@ -50,62 +82,121 @@ class SocketService {
     this.socket?.emit('leaveBoard', boardId);
   }
 
-  // Event listeners
-  onBoardCreated(callback: (board: any) => void): void {
-    this.socket?.on('board_created', callback);
+  on<K extends keyof SocketEventMap>(
+    event: K,
+    callback: (payload: SocketEventMap[K]) => void,
+  ): () => void {
+    const socket = this.socket;
+
+    if (!socket) {
+      return () => undefined;
+    }
+
+    const listener = callback as (
+      payload: SocketEventMap[K],
+    ) => void;
+
+    socket.on(event, listener as never);
+
+    return () => {
+      socket.off(event, listener as never);
+    };
   }
 
-  onBoardUpdated(callback: (board: any) => void): void {
-    this.socket?.on('board_updated', callback);
+  removeListener<K extends keyof SocketEventMap>(
+    event: K,
+    callback: (payload: SocketEventMap[K]) => void,
+  ): void {
+    this.socket?.off(event, callback as never);
   }
 
-  onBoardArchived(callback: (board: any) => void): void {
-    this.socket?.on('board_archived', callback);
+  onBoardCreated(
+    callback: (payload: Board) => void,
+  ): () => void {
+    return this.on('board_created', callback);
   }
 
-  onListCreated(callback: (list: any) => void): void {
-    this.socket?.on('list_created', callback);
+  onBoardUpdated(
+    callback: (payload: Board) => void,
+  ): () => void {
+    return this.on('board_updated', callback);
   }
 
-  onListUpdated(callback: (list: any) => void): void {
-    this.socket?.on('list_updated', callback);
+  onBoardArchived(
+    callback: (payload: Board) => void,
+  ): () => void {
+    return this.on('board_archived', callback);
   }
 
-  onListDeleted(callback: (data: { listId: string }) => void): void {
-    this.socket?.on('list_deleted', callback);
+  onListCreated(
+    callback: (payload: List) => void,
+  ): () => void {
+    return this.on('list_created', callback);
   }
 
-  onListsReordered(callback: (data: { boardId: string; lists: string[] }) => void): void {
-    this.socket?.on('lists_reordered', callback);
+  onListUpdated(
+    callback: (payload: List) => void,
+  ): () => void {
+    return this.on('list_updated', callback);
   }
 
-  onCardCreated(callback: (card: any) => void): void {
-    this.socket?.on('card_created', callback);
+  onListDeleted(
+    callback: (payload: { listId: string }) => void,
+  ): () => void {
+    return this.on('list_deleted', callback);
   }
 
-  onCardUpdated(callback: (card: any) => void): void {
-    this.socket?.on('card_updated', callback);
+  onListsReordered(
+    callback: (payload: {
+      boardId: string;
+      lists: string[];
+    }) => void,
+  ): () => void {
+    return this.on('lists_reordered', callback);
   }
 
-  onCardMoved(callback: (data: { cardId: string; fromList: string; toList: string }) => void): void {
-    this.socket?.on('card_moved', callback);
+  onCardCreated(
+    callback: (payload: Card) => void,
+  ): () => void {
+    return this.on('card_created', callback);
   }
 
-  onCardReordered(callback: (data: { cardId: string; listId: string; position: number }) => void): void {
-    this.socket?.on('card_reordered', callback);
+  onCardUpdated(
+    callback: (payload: Card) => void,
+  ): () => void {
+    return this.on('card_updated', callback);
   }
 
-  onCommentCreated(callback: (comment: any) => void): void {
-    this.socket?.on('comment_created', callback);
+  onCardMoved(
+    callback: (payload: {
+      cardId: string;
+      fromList: string;
+      toList: string;
+    }) => void,
+  ): () => void {
+    return this.on('card_moved', callback);
   }
 
-  onCommentDeleted(callback: (data: { commentId: string }) => void): void {
-    this.socket?.on('comment_deleted', callback);
+  onCardReordered(
+    callback: (payload: {
+      cardId: string;
+      listId: string;
+      position: number;
+    }) => void,
+  ): () => void {
+    return this.on('card_reordered', callback);
   }
 
-  // Remove listeners
-  removeAllListeners(): void {
-    this.socket?.removeAllListeners();
+  onCommentCreated(
+    callback: (payload: unknown) => void,
+  ): () => void {
+    return this.on('comment_created', callback);
+  }
+
+  onCommentDeleted(
+    callback: (payload: { commentId: string }) => void,
+  ): () => void {
+    return this.on('comment_deleted', callback);
   }
 }
 
