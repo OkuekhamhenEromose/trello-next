@@ -150,18 +150,18 @@ export default function SetupAccountContent() {
       sessionStorage.removeItem("verificationEmail");
       sessionStorage.removeItem("verificationToken");
       sessionStorage.removeItem("emailVerified");
-      
+
       // Store token and redirect to welcome page
-      localStorage.setItem("trello_token", response.token);
+      // localStorage.setItem("trello_token", response.token);
       router.push("/welcome");
     } catch (err: unknown) {
-      console.error("❌ Registration error:", err);
+      // console.error("❌ Registration error:", err);
       // Type guard to safely access response properties
-  const apiError = err as { 
-    response?: { 
-      data?: { 
-        error?: string; 
-        message?: string; 
+  const apiError = err as {
+    response?: {
+      data?: {
+        error?: string;
+        message?: string;
         errors?: Array<{ msg?: string; message?: string }>;
       };
       status?: number;
@@ -174,9 +174,9 @@ export default function SetupAccountContent() {
   console.error("Error headers:", apiError.response?.headers);
 
   // Show detailed error message
-  let errorMessage = apiError.response?.data?.error || 
+  let errorMessage = apiError.response?.data?.error ||
                      apiError.response?.data?.message ||
-                     apiError.message || 
+                     apiError.message ||
                      "Account setup failed";
 
      // If there are validation errors, show them too
@@ -186,13 +186,13 @@ export default function SetupAccountContent() {
     apiError.response.data.errors.forEach((e, i) => {
       console.error(`Validation error ${i + 1}:`, e);
     });
-    
+
     // Format validation errors for display
     const validationMessages = apiError.response.data.errors
       .map((e) => e.msg || e.message)
       .join(', ');
     errorMessage = `${errorMessage}: ${validationMessages}`;
-    
+
     // Set the error state with the validation messages
     setError(errorMessage);
   } else {

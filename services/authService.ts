@@ -16,7 +16,7 @@
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
-const TOKEN_KEY = "trello_token";
+// const TOKEN_KEY = "trello_token";
 
 /* ════════════════════════════════════════════════════════════
    TYPES
@@ -80,9 +80,9 @@ export async function http<T>(
 
   if (!res.ok) {
     // Attach status + backend error fields for caller handling
-    throw Object.assign(new Error(data?.error ?? "Request failed"), { 
-      status: res.status, 
-      ...data 
+    throw Object.assign(new Error(data?.error ?? "Request failed"), {
+      status: res.status,
+      ...data
     });
   }
 
@@ -103,7 +103,7 @@ let refreshPromise: Promise<boolean> | null = null;
 export async function refreshTokenIfNeeded(): Promise<boolean> {
   // If already refreshing, return that promise
   if (refreshPromise) return refreshPromise;
-  
+
   refreshPromise = (async () => {
     try {
       const refreshed = await authService.refreshAccessToken();
@@ -112,7 +112,7 @@ export async function refreshTokenIfNeeded(): Promise<boolean> {
       refreshPromise = null;
     }
   })();
-  
+
   return refreshPromise;
 }
 
@@ -135,7 +135,7 @@ export async function httpWithAuth<T>(
   body?: object
 ): Promise<T> {
   let token = authService.getToken();
-  
+
   try {
     return await http<T>(method, path, body, token);
   } catch (error: unknown) {
@@ -146,7 +146,7 @@ export async function httpWithAuth<T>(
 
     if (status === 401) {
       const refreshed = await refreshTokenIfNeeded();
-      
+
       if (refreshed) {
         // Retry with new token
         return await http<T>(method, path, body, authService.getToken());
@@ -169,9 +169,9 @@ class AuthService {
   private _listeners: Set<Listener> = new Set();
 
   constructor() {
-    if (typeof window !== "undefined") {
-      this._token = localStorage.getItem(TOKEN_KEY);
-    }
+    // if (typeof window !== "undefined") {
+    //   this._token = localStorage.getItem(TOKEN_KEY);
+    // }
   }
 
   /* ── Pub/Sub ── */
@@ -190,13 +190,14 @@ class AuthService {
 
   setToken(token: string) {
     this._token = token;
-    if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, token);
+    this._notify();
+    // if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, token);
   }
 
   clearToken() {
     this._token = null;
     this._user  = null;
-    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
+    // if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
     this._notify();
   }
 
@@ -300,7 +301,7 @@ class AuthService {
       const res = await http<{ accessToken: string; user: User }>(
         "POST", "/auth/refresh-token", undefined, undefined // No token needed, uses cookie
       );
-      
+
       this.setToken(res.accessToken);
       this._user = {
         ...res.user,

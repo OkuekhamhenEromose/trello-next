@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import {authService} from "@/services/authService";
 
 /* ════════════════════════════════════════════════════════════
    TYPES
@@ -1552,7 +1553,7 @@ export default function LoginContent() {
     // OAuth success: token in query
     const oauthToken = searchParams.get("token");
     if (oauthToken) {
-      localStorage.setItem("trello_token", oauthToken);
+      authService.setToken(oauthToken);
       router.replace("/board");
     }
   }, [searchParams, router]);
@@ -1649,7 +1650,7 @@ export default function LoginContent() {
         { email: form.email, token: code, rememberMe: form.rememberMe },
       );
       // Store token
-      localStorage.setItem("trello_token", res.accessToken);
+      authService.setToken(res.accessToken);
       // Redirect
       const next = searchParams.get("next") || res.redirect || "/boards";
       router.replace(next);

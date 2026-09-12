@@ -30,23 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUser = useCallback(async () => {
     try {
+      if (!authService.getToken()) {
+        const refreshed = await authService.refreshAccessToken();
+        if (!refreshed) {
+          setUser(null);
+          return;
+        }
+      }
       const profile = await authService.loadProfile();
       setUser(profile);
       socketService.connect(authService.getToken() ?? undefined);
     } catch {
-      const refreshed = await authService.refreshAccessToken();
-
-      if (refreshed) {
-        try {
-          const refreshedUser = await authService.loadProfile();
-          setUser(refreshedUser);
-          socketService.connect(authService.getToken() ?? undefined);
-          return;
-        } catch {
-          // Continue to clear invalid authentication state.
-        }
-      }
-
+      authService.clearToken();
       authService.clearToken();
       setUser(null);
     }
