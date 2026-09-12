@@ -11,25 +11,22 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Trello - Manage your team\'s projects',
-    template: '%s | Trello'
+    default: 'Project Board - Collaborative project management',
+    template: '%s | Project Board'
   },
-  description: 'Trello helps teams move work forward. Collaborate, manage projects, and reach new productivity peaks.',
-  keywords: ['Trello', 'Project Management', 'Kanban', 'Team Collaboration', 'Task Management'],
-  authors: [{ name: 'Atlassian' }],
-  creator: 'Atlassian',
-  publisher: 'Atlassian',
-  metadataBase: new URL('https://trello.com'),
+  description: 'Collaborative project management with boards, lists, cards, and real-time teamwork.',
+  keywords: ['Project Management', 'Kanban', 'Team Collaboration', 'Task Management'],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://trello.com',
-    title: 'Trello - Manage your team\'s projects',
-    description: 'Trello helps teams move work forward.',
-    siteName: 'Trello',
+    url: '/',
+    title: 'Project Board - Collaborative project management',
+    description: 'Collaborative project management with boards, lists, cards, and real-time teamwork.',
+    siteName: 'Project Board',
     images: [
       {
         url: '/og-image.png',
@@ -41,9 +38,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Trello - Manage your team\'s projects',
-    description: 'Trello helps teams move work forward.',
-    creator: '@trello',
+    title: 'Project Board - Collaborative project management',
+    description: 'Collaborative project management with boards, lists, cards, and real-time teamwork.',
+    
     images: ['/twitter-image.png'],
   },
   robots: {
@@ -68,7 +65,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0052CC',
+  themeColor: '#0f172a',
   colorScheme: 'light',
 }
 

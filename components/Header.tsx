@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { ChevronDown, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -23,7 +22,6 @@ const navItems: readonly NavItem[] = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const pathname = usePathname()
 
   const handleMobileMenuToggle = useCallback(() => {
     setMobileMenuOpen(prev => !prev)
